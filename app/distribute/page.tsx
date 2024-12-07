@@ -10,6 +10,7 @@ import { validateDistribution } from '@/utils/validation';
 import { toast } from 'react-hot-toast';
 import { parseEther, parseUnits } from 'ethers';
 import { Provider, RpcProvider } from 'starknet';
+import { Switch } from '@/components/Switch';
 
 
 interface Distribution {
@@ -32,6 +33,7 @@ export default function DistributePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentTxHash, setCurrentTxHash] = useState<string | undefined>();
   const [distributionType, setDistributionType] = useState<'equal' | 'weighted'>('equal');
+  const [equalAmount, setEqualAmount] = useState<string>('');
 
   // Add transaction receipt hook
   const { data: receipt, isLoading: isWaitingForTx, status: receiptStatus, error: receiptError } = useTransactionReceipt({
@@ -44,16 +46,16 @@ export default function DistributePage() {
     Papa.parse(file, {
       complete: (results) => {
         const parsedDistributions = results.data
-          .filter((row: any) => row.length >= 2)
+          .filter((row: any) => row.length >= 1 && row[0])
           .map((row: any) => ({
             address: row[0],
-            amount: row[1],
+            amount: row[1] || equalAmount,
           }));
         setDistributions(parsedDistributions);
       },
       header: false,
     });
-  }, []);
+  }, [equalAmount]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -153,9 +155,17 @@ export default function DistributePage() {
       console.log(distributionType);
       console.log(account);
       if (distributionType === 'equal') {
-        const amount = parseUnits(distributions[0].amount, 18);
-        const low = amount & BigInt('0xffffffffffffffffffffffffffffffff');
-        const high = amount >> BigInt(128);
+        // Add 1 token (10^18) to each amount
+        const oneToken = BigInt("1000000000000000000"); // 1 token in wei
+        const amounts = distributions.map(dist => BigInt(parseUnits(dist.amount, 18)));
+        const totalAmount = amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0)) + oneToken;
+        console.log("Amount", totalAmount);
+        const totalAmountString = totalAmount.toString();  // Converts BigInt to string, removing the 'n'
+        console.log("Amount String", totalAmountString);
+        const low = BigInt(totalAmountString) & BigInt('0xffffffffffffffffffffffffffffffff');
+        const high = BigInt(totalAmountString) >> BigInt(128);
+        console.log("Low", low);
+        console.log("High", high);
         const calls: Call[] = [{
           entrypoint: "approve",
           contractAddress: TOKEN_ADDRESS,
@@ -251,29 +261,41 @@ export default function DistributePage() {
       {/* Distribution Type Toggle */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Distribution Type</h2>
-        <div className="inline-flex rounded-lg p-1 bg-starknet-purple bg-opacity-20">
-          <button
-            onClick={() => setDistributionType('equal')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-              distributionType === 'equal'
-                ? 'bg-starknet-cyan text-starknet-navy'
-                : 'text-starknet-cyan hover:bg-starknet-purple hover:bg-opacity-30'
-            }`}
-          >
-            Equal
-          </button>
-          <button
-            onClick={() => setDistributionType('weighted')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-              distributionType === 'weighted'
-                ? 'bg-starknet-cyan text-starknet-navy'
-                : 'text-starknet-cyan hover:bg-starknet-purple hover:bg-opacity-30'
-            }`}
-          >
-            Weighted
-          </button>
+        <div className="flex items-center gap-3">
+          <label htmlFor="distribution-type-toggle">Equal</label>
+          <Switch
+            id="distribution-type-toggle"
+            valueBasis={distributionType === 'equal'}
+            handleToggle={() => {
+              setDistributionType(distributionType === 'equal' ? 'weighted' : 'equal');
+            }}
+          />
+          <label>Weighted</label>
         </div>
       </div>
+
+      {/* Add Equal Amount Input when type is 'equal' */}
+      {distributionType === 'equal' && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Amount per Address</h2>
+          <input
+            type="text"
+            placeholder="Amount to distribute per address"
+            value={equalAmount}
+            onChange={(e) => {
+              setEqualAmount(e.target.value);
+              // Update all existing distributions with new amount
+              setDistributions(prev => 
+                prev.map(dist => ({
+                  ...dist,
+                  amount: e.target.value
+                }))
+              );
+            }}
+            className="w-full bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
+          />
+        </div>
+      )}
 
       {/* CSV Upload Section */}
       <div
@@ -285,11 +307,15 @@ export default function DistributePage() {
         {isDragActive ? (
           <p>Drop the CSV file here...</p>
         ) : (
-          <p>Drag and drop a CSV file here, or click to select a file</p>
+          <div>
+            <p>Drag and drop a CSV file here, or click to select a file</p>
+            <p className="text-sm text-gray-400 mt-2">
+              {distributionType === 'equal' 
+                ? 'CSV format: address (one per line)'
+                : 'CSV format: address,amount (one per line)'}
+            </p>
+          </div>
         )}
-        <p className="text-sm text-gray-400 mt-2">
-          CSV format: address,amount (one per line)
-        </p>
       </div>
 
       {/* Manual Input Section */}
@@ -313,14 +339,14 @@ export default function DistributePage() {
                 placeholder="Address"
                 value={dist.address}
                 onChange={(e) => updateDistribution(index, 'address', e.target.value)}
-                className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
               />
               <input
                 type="text"
                 placeholder="Amount"
                 value={dist.amount}
                 onChange={(e) => updateDistribution(index, 'amount', e.target.value)}
-                className="w-32 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-white placeholder-gray-400"
+                className="w-32 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
               />
               <button
                 onClick={() => removeRow(index)}
