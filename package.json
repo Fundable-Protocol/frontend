@@ -11,6 +11,7 @@
   "dependencies": {
     "@starknet-react/chains": "^3.1.0",
     "@starknet-react/core": "^3.5.0",
+    "clsx": "^2.1.1",
     "ethers": "^6.13.4",
     "next": "15.0.3",
     "papaparse": "^5.4.1",
@@ -18,7 +19,8 @@
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-dropzone": "^14.3.5",
     "react-hot-toast": "^2.4.1",
-    "starknet": "^6.11.0"
+    "starknet": "^6.11.0",
+    "tailwind-merge": "^2.5.5"
   },
   "devDependencies": {
     "@types/node": "^20",
