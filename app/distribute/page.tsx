@@ -166,7 +166,8 @@ export default function DistributePage() {
         const high = BigInt(totalAmountString) >> BigInt(128);
         console.log("Low", low);
         console.log("High", high);
-        const calls: Call[] = [{
+        const calls: Call[] = [
+        {
           entrypoint: "approve",
           contractAddress: TOKEN_ADDRESS,
           calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()]
@@ -177,8 +178,7 @@ export default function DistributePage() {
           calldata: [
             low.toString(),
             high.toString(),
-            recipients.length.toString(),
-            ...recipients,
+            recipients,
             TOKEN_ADDRESS
           ]
         }
@@ -192,11 +192,12 @@ export default function DistributePage() {
         const low = totalAmount & BigInt('0xffffffffffffffffffffffffffffffff');
         const high = totalAmount >> BigInt(128);
 
-          const calls: Call[] = [{
-            entrypoint: "approve",
-            contractAddress: TOKEN_ADDRESS,
-            calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()]
-          },
+          const calls: Call[] = [
+          // {
+          //   entrypoint: "approve",
+          //   contractAddress: TOKEN_ADDRESS,
+          //   calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()]
+          // },
           {
             entrypoint: 'distribute_weighted',
             contractAddress: CONTRACT_ADDRESS,
