@@ -1,17 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { useAccount, useContract, useTransactionReceipt } from '@starknet-react/core';
-import { useDropzone } from 'react-dropzone';
-import Papa from 'papaparse';
-import { ConnectWallet } from '@/components/ConnectWallet';
-import { Call, Contract, uint256 } from 'starknet';
-import { validateDistribution } from '@/utils/validation';
-import { toast } from 'react-hot-toast';
-import { parseEther, parseUnits } from 'ethers';
-import { Provider, RpcProvider } from 'starknet';
-import { Switch } from '@/components/Switch';
-
+import { useState, useCallback } from "react";
+import {
+  useAccount,
+  useContract,
+  useTransactionReceipt,
+} from "@starknet-react/core";
+import { useDropzone } from "react-dropzone";
+import Papa from "papaparse";
+import { ConnectWallet } from "@/component_/ConnectWallet";
+import { Call, Contract, uint256 } from "starknet";
+import { validateDistribution } from "@/utils/validation";
+import { toast } from "react-hot-toast";
+import { parseEther, parseUnits } from "ethers";
+import { Provider, RpcProvider } from "starknet";
+import { Switch } from "@/component_/Switch";
 
 interface Distribution {
   address: string;
@@ -20,56 +23,74 @@ interface Distribution {
 
 // Provider configuration
 const provider = new RpcProvider({
-  nodeUrl: process.env.NEXT_PUBLIC_RPC_URL || 'https://starknet-sepolia.public.blastapi.io/rpc/v0_7',
+  nodeUrl:
+    process.env.NEXT_PUBLIC_RPC_URL ||
+    "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
 });
 
 // Replace with your token contract address
-const CONTRACT_ADDRESS = '0x288a25635f7c57607b4e017a3439f9018441945246fb5ca3424d8148dd580cc';
-const TOKEN_ADDRESS = '0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d'
+const CONTRACT_ADDRESS =
+  "0x288a25635f7c57607b4e017a3439f9018441945246fb5ca3424d8148dd580cc";
+const TOKEN_ADDRESS =
+  "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
 
 export default function DistributePage() {
   const { address, status, account } = useAccount();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTxHash, setCurrentTxHash] = useState<string | undefined>();
-  const [distributionType, setDistributionType] = useState<'equal' | 'weighted'>('equal');
-  const [equalAmount, setEqualAmount] = useState<string>('');
+  const [distributionType, setDistributionType] = useState<
+    "equal" | "weighted"
+  >("equal");
+  const [equalAmount, setEqualAmount] = useState<string>("");
 
   // Add transaction receipt hook
-  const { data: receipt, isLoading: isWaitingForTx, status: receiptStatus, error: receiptError } = useTransactionReceipt({
+  const {
+    data: receipt,
+    isLoading: isWaitingForTx,
+    status: receiptStatus,
+    error: receiptError,
+  } = useTransactionReceipt({
     hash: currentTxHash,
     watch: true,
   });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    Papa.parse(file, {
-      complete: (results) => {
-        const parsedDistributions = results.data
-          .filter((row: any) => row.length >= 1 && row[0])
-          .map((row: any) => ({
-            address: row[0],
-            amount: row[1] || equalAmount,
-          }));
-        setDistributions(parsedDistributions);
-      },
-      header: false,
-    });
-  }, [equalAmount]);
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0];
+      Papa.parse(file, {
+        complete: (results) => {
+          const parsedDistributions = results.data
+            .filter((row: any) => row.length >= 1 && row[0])
+            .map((row: any) => ({
+              address: row[0],
+              amount: row[1] || equalAmount,
+            }));
+          setDistributions(parsedDistributions);
+        },
+        header: false,
+      });
+    },
+    [equalAmount]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'text/csv': ['.csv'],
+      "text/csv": [".csv"],
     },
     maxFiles: 1,
   });
 
   const addNewRow = () => {
-    setDistributions([...distributions, { address: '', amount: '' }]);
+    setDistributions([...distributions, { address: "", amount: "" }]);
   };
 
-  const updateDistribution = (index: number, field: keyof Distribution, value: string) => {
+  const updateDistribution = (
+    index: number,
+    field: keyof Distribution,
+    value: string
+  ) => {
     const newDistributions = [...distributions];
     newDistributions[index] = {
       ...newDistributions[index],
@@ -82,22 +103,24 @@ export default function DistributePage() {
     setDistributions(distributions.filter((_, i) => i !== index));
   };
 
-  const waitForReceipt = async (txHash: string): Promise<'success' | 'error'> => {
+  const waitForReceipt = async (
+    txHash: string
+  ): Promise<"success" | "error"> => {
     return new Promise((resolve) => {
       const checkReceipt = setInterval(async () => {
         const receipt = await account?.getTransactionReceipt(txHash);
         if (receipt) {
           clearInterval(checkReceipt);
           // Status 'ACCEPTED_ON_L2' means success
-          resolve(receipt.statusReceipt === "success" ? 'success' : 'error');
+          resolve(receipt.statusReceipt === "success" ? "success" : "error");
         }
       }, 3000); // Check every 3 seconds
     });
   };
 
   const handleDistribute = async () => {
-    if (status !== 'connected' || !address || !account) {
-      toast.error('Please connect your wallet first');
+    if (status !== "connected" || !address || !account) {
+      toast.error("Please connect your wallet first");
       return;
     }
 
@@ -107,16 +130,20 @@ export default function DistributePage() {
     // }
 
     if (distributions.length === 0) {
-      toast.error('No distributions added');
+      toast.error("No distributions added");
       return;
     }
 
     // Validation based on distribution type
-    if (distributionType === 'equal') {
+    if (distributionType === "equal") {
       const firstAmount = distributions[0].amount;
-      const hasInvalidAmount = distributions.some(dist => dist.amount !== firstAmount);
+      const hasInvalidAmount = distributions.some(
+        (dist) => dist.amount !== firstAmount
+      );
       if (hasInvalidAmount) {
-        toast.error('All distributions must have the same amount for equal distribution');
+        toast.error(
+          "All distributions must have the same amount for equal distribution"
+        );
         return;
       }
     }
@@ -136,7 +163,9 @@ export default function DistributePage() {
           Invalid distributions:
           <ul className="list-disc pl-4 mt-2">
             {validationErrors.map((error, i) => (
-              <li key={i} className="text-sm">{error}</li>
+              <li key={i} className="text-sm">
+                {error}
+              </li>
             ))}
           </ul>
         </div>
@@ -147,58 +176,71 @@ export default function DistributePage() {
     setIsLoading(true);
 
     try {
-      toast.loading('Processing distributions...', { duration: Infinity });
+      toast.loading("Processing distributions...", { duration: Infinity });
 
-      const recipients = distributions.map(dist => dist.address);
+      const recipients = distributions.map((dist) => dist.address);
 
       let tx;
       console.log(distributionType);
       console.log(account);
-      if (distributionType === 'equal') {
+      if (distributionType === "equal") {
         // Add 1 token (10^18) to each amount
         const oneToken = BigInt("1000000000000000000"); // 1 token in wei
-        const amounts = distributions.map(dist => BigInt(parseUnits(dist.amount, 18)));
-        const totalAmount = amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0)) + oneToken;
+        const amounts = distributions.map((dist) =>
+          BigInt(parseUnits(dist.amount, 18))
+        );
+        const totalAmount =
+          amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0)) +
+          oneToken;
         console.log("Amount", totalAmount);
-        const totalAmountString = totalAmount.toString();  // Converts BigInt to string, removing the 'n'
+        const totalAmountString = totalAmount.toString(); // Converts BigInt to string, removing the 'n'
         console.log("Amount String", totalAmountString);
-        const low = BigInt(totalAmountString) & BigInt('0xffffffffffffffffffffffffffffffff');
+        const low =
+          BigInt(totalAmountString) &
+          BigInt("0xffffffffffffffffffffffffffffffff");
         const high = BigInt(totalAmountString) >> BigInt(128);
         console.log("Low", low);
         console.log("High", high);
-        const calls: Call[] = [{
-          entrypoint: "approve",
-          contractAddress: TOKEN_ADDRESS,
-          calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()]
-        },
-        {
-          entrypoint: 'distribute',
-          contractAddress: CONTRACT_ADDRESS,
-          calldata: [
-            low.toString(),
-            high.toString(),
-            recipients.length.toString(),
-            ...recipients,
-            TOKEN_ADDRESS
-          ]
-        }
-      ];
+        const calls: Call[] = [
+          {
+            entrypoint: "approve",
+            contractAddress: TOKEN_ADDRESS,
+            calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()],
+          },
+          {
+            entrypoint: "distribute",
+            contractAddress: CONTRACT_ADDRESS,
+            calldata: [
+              low.toString(),
+              high.toString(),
+              recipients.length.toString(),
+              ...recipients,
+              TOKEN_ADDRESS,
+            ],
+          },
+        ];
         console.log(calls);
         const result = await account.execute(calls);
         tx = result.transaction_hash;
       } else {
-        const amounts = distributions.map(dist => parseUnits(dist.amount, 18));
-        const totalAmount = amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0));
-        const low = totalAmount & BigInt('0xffffffffffffffffffffffffffffffff');
+        const amounts = distributions.map((dist) =>
+          parseUnits(dist.amount, 18)
+        );
+        const totalAmount = amounts.reduce(
+          (sum, amount) => sum + BigInt(amount),
+          BigInt(0)
+        );
+        const low = totalAmount & BigInt("0xffffffffffffffffffffffffffffffff");
         const high = totalAmount >> BigInt(128);
 
-          const calls: Call[] = [{
+        const calls: Call[] = [
+          {
             entrypoint: "approve",
             contractAddress: TOKEN_ADDRESS,
-            calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()]
+            calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()],
           },
           {
-            entrypoint: 'distribute_weighted',
+            entrypoint: "distribute_weighted",
             contractAddress: CONTRACT_ADDRESS,
             calldata: [
               low.toString(),
@@ -207,10 +249,11 @@ export default function DistributePage() {
               ...amounts,
               recipients.length.toString(),
               ...recipients,
-              TOKEN_ADDRESS
-            ]
-          }];
-          const result = await account.execute(calls);
+              TOKEN_ADDRESS,
+            ],
+          },
+        ];
+        const result = await account.execute(calls);
         tx = result.transaction_hash;
       }
 
@@ -220,17 +263,23 @@ export default function DistributePage() {
       // Wait for receipt
       const receiptStatus = await account.waitForTransaction(tx);
 
-      if (receiptStatus.statusReceipt === 'success') {
+      if (receiptStatus.statusReceipt === "success") {
         toast.dismiss();
-        toast.success(`Successfully distributed tokens to ${recipients.length} addresses`, { duration: 10000 });
+        toast.success(
+          `Successfully distributed tokens to ${recipients.length} addresses`,
+          { duration: 10000 }
+        );
         setDistributions([]); // Clear the form on success
       } else {
-        toast.error('Distribution failed');
+        toast.error("Distribution failed");
       }
-
     } catch (error) {
-      console.error('Distribution process failed:', error);
-      toast.error(`Distribution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Distribution process failed:", error);
+      toast.error(
+        `Distribution failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setIsLoading(false);
       setCurrentTxHash(undefined);
@@ -238,7 +287,7 @@ export default function DistributePage() {
   };
 
   // Show connect wallet message if not connected
-  if (status !== 'connected' || !address) {
+  if (status !== "connected" || !address) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="text-center">
@@ -265,9 +314,11 @@ export default function DistributePage() {
           <label htmlFor="distribution-type-toggle">Equal</label>
           <Switch
             id="distribution-type-toggle"
-            valueBasis={distributionType === 'equal'}
+            valueBasis={distributionType === "equal"}
             handleToggle={() => {
-              setDistributionType(distributionType === 'equal' ? 'weighted' : 'equal');
+              setDistributionType(
+                distributionType === "equal" ? "weighted" : "equal"
+              );
             }}
           />
           <label>Weighted</label>
@@ -275,7 +326,7 @@ export default function DistributePage() {
       </div>
 
       {/* Add Equal Amount Input when type is 'equal' */}
-      {distributionType === 'equal' && (
+      {distributionType === "equal" && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Amount per Address</h2>
           <input
@@ -285,10 +336,10 @@ export default function DistributePage() {
             onChange={(e) => {
               setEqualAmount(e.target.value);
               // Update all existing distributions with new amount
-              setDistributions(prev => 
-                prev.map(dist => ({
+              setDistributions((prev) =>
+                prev.map((dist) => ({
                   ...dist,
-                  amount: e.target.value
+                  amount: e.target.value,
                 }))
               );
             }}
@@ -301,7 +352,7 @@ export default function DistributePage() {
       <div
         {...getRootProps()}
         className={`border-2 border-starknet-cyan rounded-lg p-8 mb-8 text-center cursor-pointer
-          ${isDragActive ? 'bg-starknet-purple bg-opacity-20' : ''}`}
+          ${isDragActive ? "bg-starknet-purple bg-opacity-20" : ""}`}
       >
         <input {...getInputProps()} />
         {isDragActive ? (
@@ -310,9 +361,9 @@ export default function DistributePage() {
           <div>
             <p>Drag and drop a CSV file here, or click to select a file</p>
             <p className="text-sm text-gray-400 mt-2">
-              {distributionType === 'equal' 
-                ? 'CSV format: address (one per line)'
-                : 'CSV format: address,amount (one per line)'}
+              {distributionType === "equal"
+                ? "CSV format: address (one per line)"
+                : "CSV format: address,amount (one per line)"}
             </p>
           </div>
         )}
@@ -338,14 +389,18 @@ export default function DistributePage() {
                 type="text"
                 placeholder="Address"
                 value={dist.address}
-                onChange={(e) => updateDistribution(index, 'address', e.target.value)}
+                onChange={(e) =>
+                  updateDistribution(index, "address", e.target.value)
+                }
                 className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
               />
               <input
                 type="text"
                 placeholder="Amount"
                 value={dist.amount}
-                onChange={(e) => updateDistribution(index, 'amount', e.target.value)}
+                onChange={(e) =>
+                  updateDistribution(index, "amount", e.target.value)
+                }
                 className="w-32 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
               />
               <button
@@ -364,13 +419,15 @@ export default function DistributePage() {
         onClick={handleDistribute}
         disabled={isLoading || distributions.length === 0}
         className={`w-full px-6 py-3 bg-starknet-cyan text-starknet-navy rounded-lg font-semibold 
-          ${isLoading || distributions.length === 0 
-            ? 'opacity-50 cursor-not-allowed' 
-            : 'hover:bg-opacity-90'} 
+          ${
+            isLoading || distributions.length === 0
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-opacity-90"
+          } 
           transition-all`}
       >
-        {isLoading ? 'Processing...' : 'Distribute Tokens'}
+        {isLoading ? "Processing..." : "Distribute Tokens"}
       </button>
     </div>
   );
-} 
+}
