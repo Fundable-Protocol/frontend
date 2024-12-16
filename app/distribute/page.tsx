@@ -14,7 +14,7 @@ import { validateDistribution } from "@/utils/validation";
 import { toast } from "react-hot-toast";
 import { parseEther, parseUnits } from "ethers";
 import { Provider, RpcProvider } from "starknet";
-import { Switch } from "@/component_/Switch";
+import { Switch } from "@/components/ui/switch";
 
 interface Distribution {
   address: string;
@@ -289,14 +289,16 @@ export default function DistributePage() {
   // Show connect wallet message if not connected
   if (status !== "connected" || !address) {
     return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-8">Token Distribution</h1>
-          <div className="p-8 rounded-lg bg-starknet-purple bg-opacity-20">
-            <p className="text-starknet-cyan mb-4">
-              Please connect your wallet to use the distribution feature
-            </p>
-            <ConnectWallet />
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#5b21b6] via-[#0d0019] to-[#0d0019]">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <h1 className="text-5xl font-bric font-bold text-white mb-8">Token Distribution</h1>
+            <div className="p-8 rounded-lg bg-[#0d0019] bg-opacity-50 border border-[#5b21b6] border-opacity-20">
+              <p className="text-[#DADADA] mb-4">
+                Please connect your wallet to use the distribution feature
+              </p>
+              <ConnectWallet />
+            </div>
           </div>
         </div>
       </div>
@@ -304,130 +306,142 @@ export default function DistributePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <h1 className="text-3xl font-bold mb-8">Token Distribution</h1>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#5b21b6] via-[#0d0019] to-[#0d0019]">
+      <div className="container mx-auto px-4 py-16">
+        <h1 className="text-5xl font-bric font-bold text-white mb-8">Token Distribution</h1>
 
-      {/* Distribution Type Toggle */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Distribution Type</h2>
-        <div className="flex items-center gap-3">
-          <label htmlFor="distribution-type-toggle">Equal</label>
-          <Switch
-            id="distribution-type-toggle"
-            valueBasis={distributionType === "equal"}
-            handleToggle={() => {
-              setDistributionType(
-                distributionType === "equal" ? "weighted" : "equal"
-              );
-            }}
-          />
-          <label>Weighted</label>
+        {/* Distribution Type Toggle */}
+        <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
+          <h2 className="text-2xl font-semibold mb-4 text-white">Distribution Type</h2>
+          <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-2 ${distributionType === 'equal' ? 'text-white font-semibold' : 'text-[#DADADA]'}`}>
+              <label htmlFor="distribution-type">Equal</label>
+              {distributionType === 'equal' && (
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#440495] to-[#B102CD]" />
+              )}
+            </div>
+            
+            <Switch
+              id="distribution-type"
+              checked={distributionType === "equal"}
+              onCheckedChange={(checked) => {
+                setDistributionType(checked ? "equal" : "weighted");
+              }}
+            />
+            
+            <div className={`flex items-center gap-2 ${distributionType === 'weighted' ? 'text-white font-semibold' : 'text-[#DADADA]'}`}>
+              <label>Weighted</label>
+              {distributionType === 'weighted' && (
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#440495] to-[#B102CD]" />
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Add Equal Amount Input when type is 'equal' */}
-      {distributionType === "equal" && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Amount per Address</h2>
-          <input
-            type="text"
-            placeholder="Amount to distribute per address"
-            value={equalAmount}
-            onChange={(e) => {
-              setEqualAmount(e.target.value);
-              // Update all existing distributions with new amount
-              setDistributions((prev) =>
-                prev.map((dist) => ({
-                  ...dist,
-                  amount: e.target.value,
-                }))
-              );
-            }}
-            className="w-full bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
-          />
-        </div>
-      )}
-
-      {/* CSV Upload Section */}
-      <div
-        {...getRootProps()}
-        className={`border-2 border-starknet-cyan rounded-lg p-8 mb-8 text-center cursor-pointer
-          ${isDragActive ? "bg-starknet-purple bg-opacity-20" : ""}`}
-      >
-        <input {...getInputProps()} />
-        {isDragActive ? (
-          <p>Drop the CSV file here...</p>
-        ) : (
-          <div>
-            <p>Drag and drop a CSV file here, or click to select a file</p>
-            <p className="text-sm text-gray-400 mt-2">
-              {distributionType === "equal"
-                ? "CSV format: address (one per line)"
-                : "CSV format: address,amount (one per line)"}
-            </p>
+        {/* Add Equal Amount Input when type is 'equal' */}
+        {distributionType === "equal" && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Amount per Address</h2>
+            <input
+              type="text"
+              placeholder="Amount to distribute per address"
+              value={equalAmount}
+              onChange={(e) => {
+                setEqualAmount(e.target.value);
+                // Update all existing distributions with new amount
+                setDistributions((prev) =>
+                  prev.map((dist) => ({
+                    ...dist,
+                    amount: e.target.value,
+                  }))
+                );
+              }}
+              className="w-full bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
+            />
           </div>
         )}
-      </div>
 
-      {/* Manual Input Section */}
-      <div className="mb-8">
-        <div className="flex justify-between mb-4">
-          <h2 className="text-xl font-semibold">Manual Input</h2>
-          <button
-            onClick={addNewRow}
-            className="px-4 py-2 bg-starknet-cyan text-starknet-navy rounded-lg font-semibold hover:bg-opacity-90 transition-all"
-          >
-            Add Row
-          </button>
-        </div>
-
-        {/* Distribution List */}
-        <div className="space-y-4">
-          {distributions.map((dist, index) => (
-            <div key={index} className="flex gap-4">
-              <input
-                type="text"
-                placeholder="Address"
-                value={dist.address}
-                onChange={(e) =>
-                  updateDistribution(index, "address", e.target.value)
-                }
-                className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Amount"
-                value={dist.amount}
-                onChange={(e) =>
-                  updateDistribution(index, "amount", e.target.value)
-                }
-                className="w-32 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
-              />
-              <button
-                onClick={() => removeRow(index)}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-opacity-80 transition-all"
-              >
-                Remove
-              </button>
+        {/* CSV Upload Section */}
+        <div
+          {...getRootProps()}
+          className={`border-2 border-starknet-cyan rounded-lg p-8 mb-8 text-center cursor-pointer
+            ${isDragActive ? "bg-starknet-purple bg-opacity-20" : ""}`}
+        >
+          <input {...getInputProps()} />
+          {isDragActive ? (
+            <p>Drop the CSV file here...</p>
+          ) : (
+            <div>
+              <p className="text-white">Drag and drop a CSV file here, or click to select a file</p>
+              <p className="text-sm text-gray-400 mt-2">
+                {distributionType === "equal"
+                  ? "CSV format: address (one per line)"
+                  : "CSV format: address,amount (one per line)"}
+              </p>
             </div>
-          ))}
+          )}
         </div>
-      </div>
 
-      {/* Distribution Button */}
-      <button
-        onClick={handleDistribute}
-        disabled={isLoading || distributions.length === 0}
-        className={`w-full px-6 py-3 bg-starknet-cyan text-starknet-navy rounded-lg font-semibold 
-          ${
-            isLoading || distributions.length === 0
-              ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-opacity-90"
-          } 
-          transition-all`}
-      >
-        {isLoading ? "Processing..." : "Distribute Tokens"}
-      </button>
+        {/* Manual Input Section */}
+        <div className="mb-8">
+          <div className="flex justify-between mb-4">
+            <h2 className="text-xl font-semibold">Manual Input</h2>
+            <button
+              onClick={addNewRow}
+              className="px-6 py-3 bg-gradient-to-r from-[#440495] to-[#B102CD] hover:from-[#B102CD] hover:to-[#440495] text-white font-bold rounded-full transition-all"
+            >
+              Add Row
+            </button>
+          </div>
+
+          {/* Distribution List */}
+          <div className="space-y-4">
+            {distributions.map((dist, index) => (
+              <div key={index} className="flex gap-4">
+                <input
+                  type="text"
+                  placeholder="Address"
+                  value={dist.address}
+                  onChange={(e) =>
+                    updateDistribution(index, "address", e.target.value)
+                  }
+                  className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
+                />
+                <input
+                  type="text"
+                  placeholder="Amount"
+                  value={dist.amount}
+                  onChange={(e) =>
+                    updateDistribution(index, "amount", e.target.value)
+                  }
+                  className="w-32 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
+                />
+                <button
+                  onClick={() => removeRow(index)}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full transition-all"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Distribution Button */}
+        <button
+          onClick={handleDistribute}
+          disabled={isLoading || distributions.length === 0}
+          className={`w-full px-6 py-3 bg-gradient-to-r from-[#440495] to-[#B102CD] text-white font-bold rounded-full
+            ${
+              isLoading || distributions.length === 0
+                ? "opacity-50 cursor-not-allowed from-gray-500 to-gray-600"
+                : "hover:from-[#B102CD] hover:to-[#440495]"
+            } 
+            transition-all`}
+        >
+          {isLoading ? "Processing..." : "Distribute Tokens"}
+        </button>
+      </div>
     </div>
   );
 }

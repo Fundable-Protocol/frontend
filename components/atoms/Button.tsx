@@ -14,6 +14,7 @@ import Dialog from "../molecules/Dialog";
 
 interface ButtonProps {
   onClick?: () => void;
+  className?: string;
 }
 
 const ConnectWalletButton: FC<ButtonProps> = () => {
@@ -23,7 +24,15 @@ const ConnectWalletButton: FC<ButtonProps> = () => {
     router.push("?showDialog=true");
   };
 
-  const { address, status, account } = useAccount();
+  const {
+    address,
+    status,
+    account,
+    isReconnecting,
+    isConnected,
+    isConnecting,
+    isDisconnected,
+  } = useAccount();
 
   const { connectors } = useInjectedConnectors({
     recommended: [argent(), braavos()],
@@ -35,7 +44,15 @@ const ConnectWalletButton: FC<ButtonProps> = () => {
   const { disconnect } = useDisconnect();
   const [showModal, setShowModal] = useState(false);
 
-  console.log(account);
+  console.log({
+    address,
+    gotten: "hello",
+    status,
+    isReconnecting,
+    isConnected,
+    isConnecting,
+    isDisconnected,
+  });
 
   const handleClick = () => {
     setShowModal(!showModal);
@@ -70,10 +87,10 @@ const ConnectWalletButton: FC<ButtonProps> = () => {
 
   return (
     <div className="">
-      <Button onClick={showDialog} variant="gradient">
+      <Button onClick={handleClick} variant="gradient">
         Connect Wallet
       </Button>
-      <Dialog>
+      {/* <Dialog>
         <div className="absolute right-0 mt-2 w-48 rounded-lg bg-starknet-purple shadow-lg">
           {connectors.map((connector) => (
             <button
@@ -88,7 +105,7 @@ const ConnectWalletButton: FC<ButtonProps> = () => {
             </button>
           ))}
         </div>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 };

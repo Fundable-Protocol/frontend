@@ -19,7 +19,15 @@ const ConnectWalletButton: FC = () => {
     router.push("?showDialog=true");
   };
 
-  const { address, account } = useAccount();
+  const {
+    address,
+    account,
+    status,
+    isReconnecting,
+    isConnected,
+    isConnecting,
+    isDisconnected,
+  } = useAccount();
 
   const { connectors } = useInjectedConnectors({
     recommended: [argent(), braavos()],
@@ -31,7 +39,15 @@ const ConnectWalletButton: FC = () => {
   const { disconnect } = useDisconnect();
   const [showModal, setShowModal] = useState(false);
 
-  console.log(account);
+  console.log({
+    address,
+    gotten: "hello",
+    status,
+    isReconnecting,
+    isConnected,
+    isConnecting,
+    isDisconnected,
+  });
 
   // if (address) {
   //   return (
