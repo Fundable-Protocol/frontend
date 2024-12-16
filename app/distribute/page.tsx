@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import {
+  Abi,
   useAccount,
   useContract,
   useTransactionReceipt,
@@ -9,7 +10,7 @@ import {
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
 import { ConnectWallet } from "@/component_/ConnectWallet";
-import { Call, Contract, uint256 } from "starknet";
+import { cairo, Call, CallData, Contract, uint256 } from "starknet";
 import { validateDistribution } from "@/utils/validation";
 import { toast } from "react-hot-toast";
 import { parseEther, parseUnits } from "ethers";
@@ -43,6 +44,13 @@ export default function DistributePage() {
     "equal" | "weighted"
   >("equal");
   const [equalAmount, setEqualAmount] = useState<string>("");
+
+  
+
+  // const distributeContract = useContract({
+  //   address: CONTRACT_ADDRESS,
+  //   abi: abi,
+  // });
 
   // Add transaction receipt hook
   const {
@@ -124,6 +132,10 @@ export default function DistributePage() {
       return;
     }
 
+    const {abi: ContractAbi} =  await account?.getClassAt(CONTRACT_ADDRESS)
+
+    const contract = new Contract(ContractAbi, CONTRACT_ADDRESS, account);
+
     // if (!contract) {
     //   toast.error('Contract not initialized');
     //   return;
@@ -184,14 +196,12 @@ export default function DistributePage() {
       console.log(distributionType);
       console.log(account);
       if (distributionType === "equal") {
-        // Add 1 token (10^18) to each amount
-        const oneToken = BigInt("1000000000000000000"); // 1 token in wei
+        // Add 1 token (10^18) to each amount // 1 token in wei
         const amounts = distributions.map((dist) =>
           BigInt(parseUnits(dist.amount, 18))
         );
         const totalAmount =
-          amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0)) +
-          oneToken;
+          amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0));
         console.log("Amount", totalAmount);
         const totalAmountString = totalAmount.toString(); // Converts BigInt to string, removing the 'n'
         console.log("Amount String", totalAmountString);
@@ -199,8 +209,12 @@ export default function DistributePage() {
           BigInt(totalAmountString) &
           BigInt("0xffffffffffffffffffffffffffffffff");
         const high = BigInt(totalAmountString) >> BigInt(128);
-        console.log("Low", low);
-        console.log("High", high);
+        console.log("Low", low.toString());
+        console.log("High", high.toString());
+
+        try {
+        const amountPerRecipient = cairo.uint256(amounts[0]);
+
         const calls: Call[] = [
           {
             entrypoint: "approve",
@@ -211,18 +225,26 @@ export default function DistributePage() {
             entrypoint: "distribute",
             contractAddress: CONTRACT_ADDRESS,
             calldata: [
-              low.toString(),
-              high.toString(),
+              amountPerRecipient.low,
+              amountPerRecipient.high,
               recipients.length.toString(),
               ...recipients,
               TOKEN_ADDRESS,
             ],
           },
         ];
-        console.log(calls);
-        const result = await account.execute(calls);
-        tx = result.transaction_hash;
+          const result = await account.execute(calls);
+          tx = result.transaction_hash;
+        } catch (error) {
+          console.error("Error during contract calls:", error);
+          throw new Error(
+            error instanceof Error 
+              ? `Contract interaction failed: ${error.message}`
+              : "Contract interaction failed with unknown error"
+          );
+        }
       } else {
+        console.log("Weighted distribution");
         const amounts = distributions.map((dist) =>
           parseUnits(dist.amount, 18)
         );
@@ -232,7 +254,7 @@ export default function DistributePage() {
         );
         const low = totalAmount & BigInt("0xffffffffffffffffffffffffffffffff");
         const high = totalAmount >> BigInt(128);
-
+        console.log("executing calls");
         const calls: Call[] = [
           {
             entrypoint: "approve",
@@ -243,16 +265,18 @@ export default function DistributePage() {
             entrypoint: "distribute_weighted",
             contractAddress: CONTRACT_ADDRESS,
             calldata: [
-              low.toString(),
-              high.toString(),
               amounts.length.toString(),
-              ...amounts,
+              ...amounts.flatMap(amount => {
+                const uint256Value = cairo.uint256(amount);
+                return [uint256Value.low, uint256Value.high];
+              }),
               recipients.length.toString(),
               ...recipients,
               TOKEN_ADDRESS,
             ],
           },
         ];
+        console.log("calls", calls);
         const result = await account.execute(calls);
         tx = result.transaction_hash;
       }
@@ -275,6 +299,7 @@ export default function DistributePage() {
       }
     } catch (error) {
       console.error("Distribution process failed:", error);
+      toast.dismiss();
       toast.error(
         `Distribution failed: ${
           error instanceof Error ? error.message : "Unknown error"
