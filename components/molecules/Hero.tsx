@@ -26,18 +26,18 @@ const Hero = () => {
 
         <div className="relative mt-10 md:mt-20">
           <Image
-            src="/imgs/wallets.png"
+            src="/svgs/wallets.svg"
             width={850}
             height={74}
             alt="hero-card"
-            className="hidden md:block"
+            className="hidden md:block h-auto w-auto"
           />
           <Image
-            src="/imgs/wallets.png"
+            src="/svgs/wallets.svg"
             width={350}
             height={200}
             alt="hero-card"
-            className="block md:hidden"
+            className="block md:hidden h-auto w-auto"
           />
         </div>
       </div>

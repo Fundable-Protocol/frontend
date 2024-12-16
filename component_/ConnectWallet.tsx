@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useAccount, useConnect, useDisconnect } from '@starknet-react/core';
-import { useInjectedConnectors, argent, braavos } from '@starknet-react/core';
-import { useState } from 'react';
+import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
+import { useInjectedConnectors, argent, braavos } from "@starknet-react/core";
+import { useState } from "react";
 
 export function ConnectWallet() {
   const { address } = useAccount();
@@ -18,7 +18,7 @@ export function ConnectWallet() {
   if (address) {
     return (
       <div className="relative">
-        <button 
+        <button
           className="px-4 py-2 bg-starknet-cyan text-starknet-navy rounded-lg font-semibold hover:bg-opacity-90 transition-all"
           onClick={() => setShowModal(!showModal)}
         >
@@ -57,7 +57,7 @@ export function ConnectWallet() {
             <button
               key={connector.id}
               onClick={() => {
-                connect({connector});
+                connect({ connector });
                 setShowModal(false);
               }}
               className="w-full px-4 py-2 text-left text-white hover:bg-starknet-navy transition-colors first:rounded-t-lg last:rounded-b-lg"
@@ -69,4 +69,4 @@ export function ConnectWallet() {
       )}
     </div>
   );
-} 
+}
