@@ -8,7 +8,6 @@ export default function Home() {
   return (
     <main className="space-y-20 md:space-y-52 md:pb-20">
       <header>
-        <Navbar />
         <Hero />
       </header>
       <Section2 />

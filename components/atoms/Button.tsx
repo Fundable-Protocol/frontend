@@ -1,5 +1,9 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { FC } from "react";
+import { ConnectWallet } from "@/component_/ConnectWallet";
+import { usePathname } from "next/navigation";
 
 interface ButtonProps {
   onClick?: () => void;
@@ -7,10 +11,19 @@ interface ButtonProps {
 }
 
 const ConnectWalletButton: FC<ButtonProps> = ({ onClick, className, ...rest }) => {
+  const pathname = usePathname();
+  const isRootPath = pathname === "/";
+
   return (
-    <Button onClick={onClick} variant="gradient" className={className} {...rest}>
-      Connect Wallet
-    </Button>
+    <>
+      {isRootPath ? (
+        <Button onClick={onClick} variant="gradient" className={className} {...rest}>
+          Launch App
+        </Button>
+      ) : (
+        <ConnectWallet />
+      )}
+    </>
   );
 };
 
