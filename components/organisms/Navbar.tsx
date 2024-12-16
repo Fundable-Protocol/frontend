@@ -2,7 +2,7 @@ import Image from "next/image";
 // import ConnectWalletButton from "@/components/atoms/ConnectWalletButton";
 
 import ConnectWalletButton from "@/components/atoms/Button";
-
+import { ConnectWallet } from "@/component_/ConnectWallet";
 import Link from "next/link";
 
 const Navbar = async () => {

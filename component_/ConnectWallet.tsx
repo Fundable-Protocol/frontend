@@ -2,18 +2,32 @@
 
 import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
 import { useInjectedConnectors, argent, braavos } from "@starknet-react/core";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function ConnectWallet() {
-  const { address } = useAccount();
+  const { address, isConnected, connector: activeConnector } = useAccount();
   const { connectors } = useInjectedConnectors({
     recommended: [argent(), braavos()],
     includeRecommended: "onlyIfNoConnectors",
     order: "random",
   });
-  const { connect, error } = useConnect({});
+  const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    const reconnect = async () => {
+      if (!isConnected && activeConnector) {
+        try {
+          await connect({ connector: activeConnector });
+        } catch (error) {
+          console.error("Failed to reconnect:", error);
+        }
+      }
+    };
+
+    reconnect();
+  }, [isConnected, activeConnector, connect]);
 
   if (address) {
     return (

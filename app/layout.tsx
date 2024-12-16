@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 
 import "./globals.css";
 import { StarknetProvider } from "@/component_/StarknetProvider";
+import Navbar from "@/components/organisms/Navbar";
 import { Toaster } from "react-hot-toast";
 
 const geistSans = localFont({
@@ -46,6 +47,7 @@ export default function RootLayout({
         <body
           className={`${bricolageGrotesque.variable} ${geistSans.variable} ${geistMono.variable} ${inter.className} bg-purple-50`}
         >
+          <Navbar />
           {children}
           <Toaster position="bottom-right" />
         </body>
