@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Button } from "../ui/button";
+import Link from "next/link";
 
 const Hero = () => {
   const heroText = {
@@ -18,7 +19,9 @@ const Hero = () => {
               {heroText.text}
             </p>
             <div className="flex justify-center gap-x-4">
-              <Button>Get Started</Button>
+              <Link href="/distribute">
+                <Button>Get Started</Button>
+              </Link>
               <Button variant="secondary">Learn More</Button>
             </div>
           </div>
@@ -26,18 +29,18 @@ const Hero = () => {
 
         <div className="relative mt-10 md:mt-20">
           <Image
-            src="/imgs/wallets.png"
+            src="/svgs/wallets.svg"
             width={850}
             height={74}
             alt="hero-card"
-            className="hidden md:block"
+            className="hidden md:block h-auto w-auto"
           />
           <Image
-            src="/imgs/wallets.png"
+            src="/svgs/wallets.svg"
             width={350}
             height={200}
             alt="hero-card"
-            className="block md:hidden"
+            className="block md:hidden h-auto w-auto"
           />
         </div>
       </div>

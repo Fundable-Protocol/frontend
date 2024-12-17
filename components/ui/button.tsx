@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         gradient:
-          "bg-gradient-to-r from-[#440495] to-[#B102CD] hover:from-[#B102CD] hover:to-[#440495] text-white font-bold",
+          "bg-gradient-to-r from-[#440495] to-[#B102CD] hover:from-[#B102CD] hover:to-[#440495] text-white font-bold transition-all duration-300",
         default: "bg-btn hover:bg-[#5108af] text-white font-bold",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
@@ -24,7 +24,7 @@ const buttonVariants = cva(
       size: {
         default: "px-6 py-3 font-bold",
         sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8 text-lg font-bold",
+        lg: "h-11 rounded-md px-6 text-base font-bold",
         icon: "h-10 w-10",
         hero: "w-52 h-14 font-semibold bg-btn hover:bg-primary/60",
       },

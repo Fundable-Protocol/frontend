@@ -16,6 +16,8 @@ import { toast } from "react-hot-toast";
 import { parseEther, parseUnits } from "ethers";
 import { Provider, RpcProvider } from "starknet";
 import { Switch } from "@/components/ui/switch";
+import Image from "next/image";
+import TokenDistributionWallet from "@/components/ui/distribute/TokenDistributionWallet";
 
 interface Distribution {
   address: string;
@@ -44,8 +46,6 @@ export default function DistributePage() {
     "equal" | "weighted"
   >("equal");
   const [equalAmount, setEqualAmount] = useState<string>("");
-
-  
 
   // const distributeContract = useContract({
   //   address: CONTRACT_ADDRESS,
@@ -132,7 +132,7 @@ export default function DistributePage() {
       return;
     }
 
-    const {abi: ContractAbi} =  await account?.getClassAt(CONTRACT_ADDRESS)
+    const { abi: ContractAbi } = await account?.getClassAt(CONTRACT_ADDRESS);
 
     const contract = new Contract(ContractAbi, CONTRACT_ADDRESS, account);
 
@@ -200,8 +200,10 @@ export default function DistributePage() {
         const amounts = distributions.map((dist) =>
           BigInt(parseUnits(dist.amount, 18))
         );
-        const totalAmount =
-          amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0));
+        const totalAmount = amounts.reduce(
+          (sum, amount) => sum + BigInt(amount),
+          BigInt(0)
+        );
         console.log("Amount", totalAmount);
         const totalAmountString = totalAmount.toString(); // Converts BigInt to string, removing the 'n'
         console.log("Amount String", totalAmountString);
@@ -213,32 +215,32 @@ export default function DistributePage() {
         console.log("High", high.toString());
 
         try {
-        const amountPerRecipient = cairo.uint256(amounts[0]);
+          const amountPerRecipient = cairo.uint256(amounts[0]);
 
-        const calls: Call[] = [
-          {
-            entrypoint: "approve",
-            contractAddress: TOKEN_ADDRESS,
-            calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()],
-          },
-          {
-            entrypoint: "distribute",
-            contractAddress: CONTRACT_ADDRESS,
-            calldata: [
-              amountPerRecipient.low,
-              amountPerRecipient.high,
-              recipients.length.toString(),
-              ...recipients,
-              TOKEN_ADDRESS,
-            ],
-          },
-        ];
+          const calls: Call[] = [
+            {
+              entrypoint: "approve",
+              contractAddress: TOKEN_ADDRESS,
+              calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()],
+            },
+            {
+              entrypoint: "distribute",
+              contractAddress: CONTRACT_ADDRESS,
+              calldata: [
+                amountPerRecipient.low,
+                amountPerRecipient.high,
+                recipients.length.toString(),
+                ...recipients,
+                TOKEN_ADDRESS,
+              ],
+            },
+          ];
           const result = await account.execute(calls);
           tx = result.transaction_hash;
         } catch (error) {
           console.error("Error during contract calls:", error);
           throw new Error(
-            error instanceof Error 
+            error instanceof Error
               ? `Contract interaction failed: ${error.message}`
               : "Contract interaction failed with unknown error"
           );
@@ -266,7 +268,7 @@ export default function DistributePage() {
             contractAddress: CONTRACT_ADDRESS,
             calldata: [
               amounts.length.toString(),
-              ...amounts.flatMap(amount => {
+              ...amounts.flatMap((amount) => {
                 const uint256Value = cairo.uint256(amount);
                 return [uint256Value.low, uint256Value.high];
               }),
@@ -313,39 +315,35 @@ export default function DistributePage() {
 
   // Show connect wallet message if not connected
   if (status !== "connected" || !address) {
-    return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#5b21b6] via-[#0d0019] to-[#0d0019]">
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <h1 className="text-5xl font-bric font-bold text-white mb-8">Token Distribution</h1>
-            <div className="p-8 rounded-lg bg-[#0d0019] bg-opacity-50 border border-[#5b21b6] border-opacity-20">
-              <p className="text-[#DADADA] mb-4">
-                Please connect your wallet to use the distribution feature
-              </p>
-              <ConnectWallet />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <TokenDistributionWallet />;
   }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#5b21b6] via-[#0d0019] to-[#0d0019]">
       <div className="container mx-auto px-4 py-16">
-        <h1 className="text-5xl font-bric font-bold text-white mb-8">Token Distribution</h1>
+        <h1 className="text-5xl font-bric font-bold text-white mb-8">
+          Token Distribution
+        </h1>
 
         {/* Distribution Type Toggle */}
         <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
-          <h2 className="text-2xl font-semibold mb-4 text-white">Distribution Type</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-white">
+            Distribution Type
+          </h2>
           <div className="flex items-center gap-4">
-            <div className={`flex items-center gap-2 ${distributionType === 'equal' ? 'text-white font-semibold' : 'text-[#DADADA]'}`}>
+            <div
+              className={`flex items-center gap-2 ${
+                distributionType === "equal"
+                  ? "text-white font-semibold"
+                  : "text-[#DADADA]"
+              }`}
+            >
               <label htmlFor="distribution-type">Equal</label>
-              {distributionType === 'equal' && (
+              {distributionType === "equal" && (
                 <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#440495] to-[#B102CD]" />
               )}
             </div>
-            
+
             <Switch
               id="distribution-type"
               checked={distributionType === "equal"}
@@ -353,10 +351,16 @@ export default function DistributePage() {
                 setDistributionType(checked ? "equal" : "weighted");
               }}
             />
-            
-            <div className={`flex items-center gap-2 ${distributionType === 'weighted' ? 'text-white font-semibold' : 'text-[#DADADA]'}`}>
+
+            <div
+              className={`flex items-center gap-2 ${
+                distributionType === "weighted"
+                  ? "text-white font-semibold"
+                  : "text-[#DADADA]"
+              }`}
+            >
               <label>Weighted</label>
-              {distributionType === 'weighted' && (
+              {distributionType === "weighted" && (
                 <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#440495] to-[#B102CD]" />
               )}
             </div>
@@ -397,7 +401,9 @@ export default function DistributePage() {
             <p>Drop the CSV file here...</p>
           ) : (
             <div>
-              <p className="text-white">Drag and drop a CSV file here, or click to select a file</p>
+              <p className="text-white">
+                Drag and drop a CSV file here, or click to select a file
+              </p>
               <p className="text-sm text-gray-400 mt-2">
                 {distributionType === "equal"
                   ? "CSV format: address (one per line)"
