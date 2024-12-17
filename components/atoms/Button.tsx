@@ -1,15 +1,12 @@
 "use client";
 
 import { FC } from "react";
-import { ConnectWallet } from "@/component_/ConnectWallet";
+// import { ConnectWallet } from "@/component_/ConnectWallet";
 import { usePathname } from "next/navigation";
 
-import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
-import { useInjectedConnectors, argent, braavos } from "@starknet-react/core";
-
-import { useState } from "react";
-
-import Dialog from "../molecules/Dialog";
+import { Button } from "../ui/button";
+import ConnectWallet from "./ConnectWallet";
+import Link from "next/link";
 
 interface ButtonProps {
   onClick?: () => void;
@@ -27,14 +24,16 @@ const ConnectWalletButton: FC<ButtonProps> = ({
   return (
     <>
       {isRootPath ? (
-        <Button
-          onClick={onClick}
-          variant="gradient"
-          className={className}
-          {...rest}
-        >
-          Launch App
-        </Button>
+        <Link href="/distribute">
+          <Button
+            onClick={onClick}
+            variant="gradient"
+            className={className}
+            {...rest}
+          >
+            Launch App
+          </Button>
+        </Link>
       ) : (
         <ConnectWallet />
       )}

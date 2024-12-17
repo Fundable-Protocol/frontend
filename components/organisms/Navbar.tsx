@@ -1,25 +1,23 @@
-import Image from "next/image";
-// import ConnectWalletButton from "@/components/atoms/ConnectWalletButton";
-
-import ConnectWalletButton from "@/components/atoms/Button";
-import { ConnectWallet } from "@/component_/ConnectWallet";
 import Link from "next/link";
+import Image from "next/image";
+import ConnectWalletButton from "@/components/atoms/Button";
 
 const Navbar = async () => {
   return (
-    <nav className="flex justify-between items-center pr-10 pl-12 py-4 text-sm font-bold text-txt bg-white">
-      <Image
-        src="/svgs/fundable_logo.svg"
-        width={10}
-        height={32}
-        alt="logo"
-        className="w-auto h-auto"
-      />
+    <nav className="flex justify-between items-center px-4 md:pr-10 md:pl-12 py-4 text-sm font-bold text-txt bg-white">
+      <Link href="/" className="max-w-32 h-auto">
+        <Image
+          priority
+          alt="logo"
+          width={50}
+          height={55}
+          className="w-auto h-auto"
+          src="/svgs/fundable_logo.svg"
+        />
+      </Link>
 
       <div className="flex items-center gap-x-4">
-        <Link href="/distribute">
-          <ConnectWalletButton />
-        </Link>
+        <ConnectWalletButton />
       </div>
     </nav>
   );

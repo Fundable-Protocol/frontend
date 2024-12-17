@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Button } from "../ui/button";
+import Link from "next/link";
 
 const Hero = () => {
   const heroText = {
@@ -18,7 +19,9 @@ const Hero = () => {
               {heroText.text}
             </p>
             <div className="flex justify-center gap-x-4">
-              <Button>Get Started</Button>
+              <Link href="/distribute">
+                <Button>Get Started</Button>
+              </Link>
               <Button variant="secondary">Learn More</Button>
             </div>
           </div>
