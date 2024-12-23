@@ -37,10 +37,10 @@ const Hero = () => {
           />
           <Image
             src="/svgs/wallets.svg"
-            width={350}
-            height={200}
+            width={50}
+            height={50}
             alt="hero-card"
-            className="block md:hidden h-auto w-auto"
+            className="block max-w-xs md:hidden h-auto w-auto"
           />
         </div>
       </div>
