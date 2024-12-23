@@ -16,9 +16,7 @@ const Navbar = async () => {
         />
       </Link>
 
-      <div className="flex items-center gap-x-4">
-        <ConnectWalletButton />
-      </div>
+      <ConnectWalletButton />
     </nav>
   );
 };
