@@ -43,15 +43,8 @@ const Dialog = ({ children }: { children: ReactNode }) => {
       <div className="relative mx-auto max-w-sm">
         <div className="flex justify-between items-center">
           <div className="flex gap-x-2">
-            <Image
-              src="/svgs/wc.svg"
-              alt="wallet connect"
-              width={29}
-              height={29}
-              className="h-auto w-auto"
-            />
             <span className="text-white text-xl font-medium">
-              WalletConnect
+              Connect Wallet
             </span>
           </div>
           <Image

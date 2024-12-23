@@ -9,6 +9,7 @@ import {
   braavos,
   useAccount,
   useConnect,
+  useDisconnect,
   useInjectedConnectors,
 } from "@starknet-react/core";
 
@@ -28,7 +29,7 @@ const ConnectWallet: FC = () => {
   });
 
   const { connect } = useConnect();
-  // const { disconnect } = useDisconnect();
+  const { disconnect } = useDisconnect();
 
   const showDialog = () => {
     if (isConnected) return;
@@ -51,9 +52,17 @@ const ConnectWallet: FC = () => {
     hideDialog();
   };
 
+  const handleClick = () => {
+    if (isConnected) {
+      disconnect();
+    } else {
+      showDialog();
+    }
+  };
+
   return (
     <>
-      <Button onClick={showDialog} variant="gradient" size="lg">
+      <Button onClick={handleClick} variant="gradient" size="lg">
         {address
           ? `${(address as string).slice(0, 7)}...${(address as string).slice(
               -5
@@ -80,20 +89,16 @@ const ConnectWallet: FC = () => {
                   </span>
                   <div>
                     <Image
-                      src={`/svgs/${cnt.id}.svg`}
-                      width={32}
-                      height={32}
+                      src={cnt.icon}
+                      width={400}
+                      height={400}
                       alt={cnt.name}
-                      className="h-auto w-auto"
+                      className="h-10 w-10"
                     />
                   </div>
                 </div>
               ))}
             </div>
-
-            <p className="text-[#8B8E97] font-inter mt-8 text-base font-normal">
-              View QR code instead
-            </p>
           </div>
         </Dialog>
       </Suspense>
