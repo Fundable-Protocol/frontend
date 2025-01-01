@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Bricolage_Grotesque } from "next/font/google";
 import localFont from "next/font/local";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import "./globals.css";
 import { StarknetProvider } from "@/component_/StarknetProvider";
@@ -49,6 +50,7 @@ export default function RootLayout({
         >
           <Navbar />
           {children}
+          <SpeedInsights />
           <Toaster position="bottom-right" />
         </body>
       </StarknetProvider>
