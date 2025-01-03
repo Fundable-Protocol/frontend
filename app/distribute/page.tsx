@@ -18,10 +18,17 @@ import { Provider, RpcProvider } from "starknet";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import TokenDistributionWallet from "@/components/ui/distribute/TokenDistributionWallet";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 interface Distribution {
   address: string;
   amount: string;
+}
+
+interface TokenOption {
+  symbol: string;
+  address: string;
+  decimals: number;
 }
 
 // Provider configuration
@@ -34,8 +41,26 @@ const provider = new RpcProvider({
 // Replace with your token contract address
 const CONTRACT_ADDRESS =
   "0x288a25635f7c57607b4e017a3439f9018441945246fb5ca3424d8148dd580cc";
-const TOKEN_ADDRESS =
-  "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+// const TOKEN_ADDRESS =
+//   "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
+
+const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
+  USDC: {
+    symbol: "USDC",
+    address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    decimals: 6
+  },
+  ETH: {
+    symbol: "ETH",
+    address: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+    decimals: 18
+  },
+  STRK: {
+    symbol: "STRK",
+    address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    decimals: 18
+  }
+};
 
 export default function DistributePage() {
   const { address, status, account } = useAccount();
@@ -46,6 +71,14 @@ export default function DistributePage() {
     "equal" | "weighted"
   >("equal");
   const [equalAmount, setEqualAmount] = useState<string>("");
+  const [selectedToken, setSelectedToken] = useState<TokenOption>(
+    SUPPORTED_TOKENS.STRK
+  );
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingDistribution, setPendingDistribution] = useState<{
+    totalAmount: string;
+    recipientCount: number;
+  } | null>(null);
 
   // const distributeContract = useContract({
   //   address: CONTRACT_ADDRESS,
@@ -126,6 +159,12 @@ export default function DistributePage() {
     });
   };
 
+  const calculateTotalAmount = () => {
+    return distributions.reduce((sum, dist) => {
+      return sum + parseFloat(dist.amount);
+    }, 0).toString();
+  };
+
   const handleDistribute = async () => {
     if (status !== "connected" || !address || !account) {
       toast.error("Please connect your wallet first");
@@ -185,6 +224,16 @@ export default function DistributePage() {
       return;
     }
 
+    // Show confirmation modal instead of proceeding directly
+    setPendingDistribution({
+      totalAmount: calculateTotalAmount(),
+      recipientCount: distributions.length
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmDistribution = async () => {
+    setShowConfirmModal(false);
     setIsLoading(true);
 
     try {
@@ -194,11 +243,14 @@ export default function DistributePage() {
 
       let tx;
       console.log(distributionType);
+      if (!account) {
+        throw new Error("Account not found");
+      }
       console.log(account);
       if (distributionType === "equal") {
         // Add 1 token (10^18) to each amount // 1 token in wei
         const amounts = distributions.map((dist) =>
-          BigInt(parseUnits(dist.amount, 18))
+          BigInt(parseUnits(dist.amount, selectedToken.decimals))
         );
         const totalAmount = amounts.reduce(
           (sum, amount) => sum + BigInt(amount),
@@ -220,7 +272,7 @@ export default function DistributePage() {
           const calls: Call[] = [
             {
               entrypoint: "approve",
-              contractAddress: TOKEN_ADDRESS,
+              contractAddress: selectedToken.address,
               calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()],
             },
             {
@@ -231,7 +283,7 @@ export default function DistributePage() {
                 amountPerRecipient.high,
                 recipients.length.toString(),
                 ...recipients,
-                TOKEN_ADDRESS,
+                selectedToken.address,
               ],
             },
           ];
@@ -260,7 +312,7 @@ export default function DistributePage() {
         const calls: Call[] = [
           {
             entrypoint: "approve",
-            contractAddress: TOKEN_ADDRESS,
+            contractAddress: selectedToken.address,
             calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()],
           },
           {
@@ -274,7 +326,7 @@ export default function DistributePage() {
               }),
               recipients.length.toString(),
               ...recipients,
-              TOKEN_ADDRESS,
+              selectedToken.address,
             ],
           },
         ];
@@ -324,6 +376,22 @@ export default function DistributePage() {
         <h1 className="text-5xl font-bric font-bold text-white mb-8">
           Token Distribution
         </h1>
+
+        {/* Token Selection Dropdown */}
+        <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
+          <h2 className="text-2xl font-semibold mb-4 text-white">Select Token</h2>
+          <select
+            value={selectedToken.symbol}
+            onChange={(e) => setSelectedToken(SUPPORTED_TOKENS[e.target.value])}
+            className="w-full bg-[#1a1a1a] text-white border border-[#5b21b6] border-opacity-40 rounded-lg px-4 py-2 focus:outline-none focus:border-[#B102CD]"
+          >
+            {Object.values(SUPPORTED_TOKENS).map((token) => (
+              <option key={token.symbol} value={token.symbol}>
+                {token.symbol}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Distribution Type Toggle */}
         <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
@@ -473,6 +541,15 @@ export default function DistributePage() {
           {isLoading ? "Processing..." : "Distribute Tokens"}
         </button>
       </div>
+
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmDistribution}
+        totalAmount={pendingDistribution?.totalAmount || "0"}
+        recipientCount={pendingDistribution?.recipientCount || 0}
+        selectedToken={selectedToken.symbol}
+      />
     </div>
   );
 }
