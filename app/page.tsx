@@ -5,10 +5,8 @@ import Section3 from "@/components/ui/landing-page/section-3";
 
 export default function Home() {
   return (
-    <main className="space-y-20 md:space-y-52 md:pb-20">
-      <header>
-        <Hero />
-      </header>
+    <main className="space-y-20 md:space-y-52 md:pb-20 container">
+      <Hero />
       <Section2 />
       <Section3 />
       <Footer />
