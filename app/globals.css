@@ -6,6 +6,12 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* .main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+} */
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -69,6 +75,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

@@ -24,7 +24,7 @@ const Section2 = () => {
   ];
 
   return (
-    <div className="container md:py-20">
+    <div className="container md:py-20 xl:px-12">
       <h2 className="text-4xl md:text-7xl md:leading-[5.6rem] text-[#444444] font-bric text-center md:text-left">
         Our Recipe <br className="hidden md:block" /> For Quick Success
       </h2>

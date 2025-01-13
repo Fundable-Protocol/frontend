@@ -1,4 +1,5 @@
 import Image from "next/image";
+import processingImg from "../../../public/imgs/section-3.png";
 
 const Section3 = () => {
   const contents = [
@@ -13,7 +14,7 @@ const Section3 = () => {
   ];
 
   return (
-    <div className="container text-center">
+    <div className="text-center">
       <h2 className="text-2xl md:text-[3.125rem] text-[#444444] font-semibold md:font-bold font-bric">
         Super efficient mass payouts
       </h2>
@@ -22,14 +23,15 @@ const Section3 = () => {
       </p>
       <div className="relative md:mx-auto md:max-w-[50%] mt-[2.54rem]">
         <Image
-          src="/imgs/section-3.png"
+          src={processingImg}
+          priority
           width={797.46}
           height={534.6}
           alt="processing-img"
         />
       </div>
-      <div className="py-16 md:py-48 pl-8">
-        <div className="hidden md:flex w-full h-[1.27px] bg-[#8256FF]  justify-between">
+      <div className="py-16 xl:py-48 pl-8 mx-auto max-w-[85%]">
+        <div className="hidden xl:flex w-full h-[1.27px] bg-[#8256FF] justify-between">
           {contents.map((cnt, i) => (
             <div
               key={`section-3-${i}`}
@@ -48,7 +50,7 @@ const Section3 = () => {
           ))}
         </div>
 
-        <div className="flex flex-col justify-between items-center md:hidden h-[60vh] w-[1.27px] bg-[#8256FF]">
+        <div className="flex flex-col justify-between items-center xl:hidden h-[60vh] w-[1.27px] bg-[#8256FF]">
           {contents.map((cnt, i) => (
             <div
               key={`section-3-${i}`}
@@ -58,7 +60,6 @@ const Section3 = () => {
                 <h3 className="text-[#444444] font-bold text-2xl font-bric text-nowrap hover:text-btn transition-all duration-200">
                   {cnt.title}
                 </h3>
-                {/* min-w-[24rem] text-wrap max-w-[32rem] */}
                 <p className="w-[20rem] text-left">{cnt.description}</p>
               </div>
             </div>
