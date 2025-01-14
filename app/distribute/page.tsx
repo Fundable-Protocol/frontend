@@ -4,12 +4,11 @@ import { useState, useCallback } from "react";
 import { useAccount } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
-import { ConnectWallet } from "@/component_/ConnectWallet";
 import { cairo, Call } from "starknet";
 import { validateDistribution } from "@/utils/validation";
 import { toast } from "react-hot-toast";
 import { parseUnits } from "ethers";
-import { RpcProvider, Contract } from "starknet";
+// import { RpcProvider } from "starknet";
 import { Switch } from "@/components/ui/switch";
 import TokenDistributionWallet from "@/components/ui/distribute/TokenDistributionWallet";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
@@ -26,9 +25,9 @@ interface TokenOption {
 }
 
 // Provider configuration
-const provider = new RpcProvider({
-  nodeUrl: process.env.NEXT_PUBLIC_RPC_URL ?? "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
-});
+// const provider = new RpcProvider({
+//   nodeUrl: process.env.NEXT_PUBLIC_RPC_URL ?? "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
+// });
 
 // Replace with your token contract address
 const CONTRACT_ADDRESS =
@@ -59,7 +58,6 @@ export default function DistributePage() {
   const { address, status, account } = useAccount();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentTxHash, setCurrentTxHash] = useState<string | undefined>();
   const [distributionType, setDistributionType] = useState<
     "equal" | "weighted"
   >("equal");
@@ -134,9 +132,6 @@ export default function DistributePage() {
     }
 
     try {
-      const { abi: ContractAbi } = await account.getClassAt(CONTRACT_ADDRESS);
-
-
       if (distributions.length === 0) {
         toast.error("No distributions added");
         return;
@@ -297,9 +292,6 @@ export default function DistributePage() {
         tx = result.transaction_hash;
       }
 
-      // Set current transaction hash for monitoring
-      setCurrentTxHash(tx);
-
       // Wait for receipt
       const receiptStatus = await account.waitForTransaction(tx);
 
@@ -323,7 +315,6 @@ export default function DistributePage() {
       );
     } finally {
       setIsLoading(false);
-      setCurrentTxHash(undefined);
     }
   };
 
