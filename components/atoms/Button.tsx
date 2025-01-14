@@ -13,11 +13,7 @@ interface ButtonProps {
   className?: string;
 }
 
-const ConnectWalletButton: FC<ButtonProps> = ({
-  onClick,
-  className,
-  ...rest
-}) => {
+const ConnectWalletButton: FC<ButtonProps> = ({ className }) => {
   const pathname = usePathname();
   const isRootPath = pathname === "/";
 
@@ -25,12 +21,7 @@ const ConnectWalletButton: FC<ButtonProps> = ({
     <>
       {isRootPath ? (
         <Link href="/distribute">
-          <Button
-            onClick={onClick}
-            variant="gradient"
-            className={className}
-            {...rest}
-          >
+          <Button variant="gradient" className={className}>
             Launch App
           </Button>
         </Link>

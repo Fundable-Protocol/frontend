@@ -23,19 +23,19 @@ export function ConnectWallet() {
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   const [showModal, setShowModal] = useState(false);
-  console.log({ activeConnector: "gbf" });
+
   useEffect(() => {
     const reconnect = async () => {
       if (!isConnected && activeConnector) {
         try {
-          connect({ connector: activeConnector });
+          await connect({ connector: activeConnector });
         } catch (error) {
           console.error("Failed to reconnect:", error);
         }
       }
     };
 
-    reconnect();
+    void reconnect();
   }, [isConnected, activeConnector, connect]);
 
   if (address) {

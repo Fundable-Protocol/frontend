@@ -1,22 +1,16 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import {
-  Abi,
-  useAccount,
-  useContract,
-  useTransactionReceipt,
-} from "@starknet-react/core";
+import { useAccount } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
 import { ConnectWallet } from "@/component_/ConnectWallet";
-import { cairo, Call, CallData, Contract, uint256 } from "starknet";
+import { cairo, Call } from "starknet";
 import { validateDistribution } from "@/utils/validation";
 import { toast } from "react-hot-toast";
-import { parseEther, parseUnits } from "ethers";
-import { Provider, RpcProvider } from "starknet";
+import { parseUnits } from "ethers";
+import { RpcProvider, Contract } from "starknet";
 import { Switch } from "@/components/ui/switch";
-import Image from "next/image";
 import TokenDistributionWallet from "@/components/ui/distribute/TokenDistributionWallet";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
@@ -33,16 +27,12 @@ interface TokenOption {
 
 // Provider configuration
 const provider = new RpcProvider({
-  nodeUrl:
-    process.env.NEXT_PUBLIC_RPC_URL ||
-    "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
+  nodeUrl: process.env.NEXT_PUBLIC_RPC_URL ?? "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
 });
 
 // Replace with your token contract address
 const CONTRACT_ADDRESS =
   "0x288a25635f7c57607b4e017a3439f9018441945246fb5ca3424d8148dd580cc";
-// const TOKEN_ADDRESS =
-//   "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d";
 
 const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
   USDC: {
@@ -62,6 +52,9 @@ const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
   }
 };
 
+// Add proper type for CSV parsing result
+type CSVRow = [string, string];
+
 export default function DistributePage() {
   const { address, status, account } = useAccount();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
@@ -80,30 +73,14 @@ export default function DistributePage() {
     recipientCount: number;
   } | null>(null);
 
-  // const distributeContract = useContract({
-  //   address: CONTRACT_ADDRESS,
-  //   abi: abi,
-  // });
-
-  // Add transaction receipt hook
-  const {
-    data: receipt,
-    isLoading: isWaitingForTx,
-    status: receiptStatus,
-    error: receiptError,
-  } = useTransactionReceipt({
-    hash: currentTxHash,
-    watch: true,
-  });
-
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
-      Papa.parse(file, {
+      Papa.parse<CSVRow>(file, {
         complete: (results) => {
           const parsedDistributions = results.data
-            .filter((row: any) => row.length >= 1 && row[0])
-            .map((row: any) => ({
+            .filter((row) => row[0])
+            .map((row) => ({
               address: row[0],
               amount: row[1] || equalAmount,
             }));
@@ -144,92 +121,77 @@ export default function DistributePage() {
     setDistributions(distributions.filter((_, i) => i !== index));
   };
 
-  const waitForReceipt = async (
-    txHash: string
-  ): Promise<"success" | "error"> => {
-    return new Promise((resolve) => {
-      const checkReceipt = setInterval(async () => {
-        const receipt = await account?.getTransactionReceipt(txHash);
-        if (receipt) {
-          clearInterval(checkReceipt);
-          // Status 'ACCEPTED_ON_L2' means success
-          resolve(receipt.statusReceipt === "success" ? "success" : "error");
-        }
-      }, 3000); // Check every 3 seconds
-    });
-  };
-
   const calculateTotalAmount = () => {
     return distributions.reduce((sum, dist) => {
       return sum + parseFloat(dist.amount);
     }, 0).toString();
   };
 
-  const handleDistribute = async () => {
+  const handleDistribute = async (): Promise<void> => {
     if (status !== "connected" || !address || !account) {
       toast.error("Please connect your wallet first");
       return;
     }
 
-    const { abi: ContractAbi } = await account?.getClassAt(CONTRACT_ADDRESS);
+    try {
+      const { abi: ContractAbi } = await account.getClassAt(CONTRACT_ADDRESS);
 
-    const contract = new Contract(ContractAbi, CONTRACT_ADDRESS, account);
 
-    // if (!contract) {
-    //   toast.error('Contract not initialized');
-    //   return;
-    // }
+      if (distributions.length === 0) {
+        toast.error("No distributions added");
+        return;
+      }
 
-    if (distributions.length === 0) {
-      toast.error("No distributions added");
-      return;
-    }
+      // Validation based on distribution type
+      if (distributionType === "equal") {
+        const firstAmount = distributions[0].amount;
+        const hasInvalidAmount = distributions.some(
+          (dist) => dist.amount !== firstAmount
+        );
+        if (hasInvalidAmount) {
+          toast.error(
+            "All distributions must have the same amount for equal distribution"
+          );
+          return;
+        }
+      }
 
-    // Validation based on distribution type
-    if (distributionType === "equal") {
-      const firstAmount = distributions[0].amount;
-      const hasInvalidAmount = distributions.some(
-        (dist) => dist.amount !== firstAmount
-      );
-      if (hasInvalidAmount) {
+      // Check if there are any distributions
+      const validationErrors: string[] = [];
+      distributions.forEach((dist, index) => {
+        const validation = validateDistribution(dist.address, dist.amount);
+        if (!validation.isValid && validation.error) {
+          validationErrors.push(`Row ${index + 1}: ${validation.error}`);
+        }
+      });
+
+      if (validationErrors.length > 0) {
         toast.error(
-          "All distributions must have the same amount for equal distribution"
+          <div>
+            Invalid distributions:
+            <ul className="list-disc pl-4 mt-2">
+              {validationErrors.map((error, i) => (
+                <li key={i} className="text-sm">
+                  {error}
+                </li>
+              ))}
+            </ul>
+          </div>
         );
         return;
       }
-    }
 
-    // Check if there are any distributions
-    const validationErrors: string[] = [];
-    distributions.forEach((dist, index) => {
-      const validation = validateDistribution(dist.address, dist.amount);
-      if (!validation.isValid && validation.error) {
-        validationErrors.push(`Row ${index + 1}: ${validation.error}`);
-      }
-    });
-
-    if (validationErrors.length > 0) {
-      toast.error(
-        <div>
-          Invalid distributions:
-          <ul className="list-disc pl-4 mt-2">
-            {validationErrors.map((error, i) => (
-              <li key={i} className="text-sm">
-                {error}
-              </li>
-            ))}
-          </ul>
-        </div>
-      );
+      // Show confirmation modal instead of proceeding directly
+      setPendingDistribution({
+        totalAmount: calculateTotalAmount(),
+        recipientCount: distributions.length
+      });
+      setShowConfirmModal(true);
+    } catch (error) {
+      console.error("Error getting contract ABI:", error);
+      toast.error("Failed to initialize contract");
       return;
     }
-
-    // Show confirmation modal instead of proceeding directly
-    setPendingDistribution({
-      totalAmount: calculateTotalAmount(),
-      recipientCount: distributions.length
-    });
-    setShowConfirmModal(true);
   };
 
   const handleConfirmDistribution = async () => {
