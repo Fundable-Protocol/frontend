@@ -7,14 +7,20 @@ const Footer = () => {
         <span>copyright fundable 2024</span>
 
         <div className="flex gap-x-3 md:gap-x-7">
-          <Image
-            src="/svgs/telegram.svg"
-            width={32}
-            height={32}
-            alt="telegram"
-          />
-          <Image src="/svgs/discord.svg" width={32} height={32} alt="discord" />
-          <Image src="/svgs/x.svg" width={32} height={32} alt="x" />
+          <a href="https://t.me/fundable_finance" target="_blank" rel="noopener noreferrer">
+            <Image
+              src="/svgs/telegram.svg"
+              width={32}
+              height={32}
+              alt="telegram"
+            />
+          </a>
+          <a href="" target="_blank" rel="noopener noreferrer">
+            <Image src="/svgs/discord.svg" width={32} height={32} alt="discord" />
+          </a>
+          <a href="https://x.com/fundable_" target="_blank" rel="noopener noreferrer">
+            <Image src="/svgs/x.svg" width={32} height={32} alt="x" />
+          </a>
         </div>
       </div>
     </footer>

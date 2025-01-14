@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   title: "Fundable",
   description: "A decentralized funding application built on Starknet",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon_io/favicon.ico",
   },
 };
 // antialiased bg-[#0C0C4F] text-white min-h-screen

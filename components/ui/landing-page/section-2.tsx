@@ -6,20 +6,20 @@ const Section2 = () => {
   const contents = [
     {
       Icon: InternalArrowIcon,
-      header: "Scalability",
+      header: "Linear Streaming",
       description:
-        "Process thousands of transactions per second with STARK proofs",
+        "Create and manage continuous payment streams with precise per-second rates",
     },
     {
       Icon: ShieldIcon,
-      header: "Security",
-      description: "Benefit from mathematical proof-based security",
+      header: "Quadratic Funding",
+      description: "Amplify community preferences with democratic fund matching",
     },
     {
       Icon: LinkIcon,
-      header: "Composability",
+      header: "Mass Distribution",
       description:
-        "Build and connect with other Starknet applications seamlessly",
+        "Distribute resources equitably through transparent giveaway mechanisms with a single transaction",
     },
   ];
 
