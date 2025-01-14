@@ -36,19 +36,22 @@ const CONTRACT_ADDRESS =
 const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
   USDC: {
     symbol: "USDC",
-    address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-    decimals: 6
+    address:
+      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    decimals: 6,
   },
   ETH: {
     symbol: "ETH",
-    address: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
-    decimals: 18
+    address:
+      "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+    decimals: 18,
   },
   STRK: {
     symbol: "STRK",
-    address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-    decimals: 18
-  }
+    address:
+      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    decimals: 18,
+  },
 };
 
 // Add proper type for CSV parsing result
@@ -120,9 +123,11 @@ export default function DistributePage() {
   };
 
   const calculateTotalAmount = () => {
-    return distributions.reduce((sum, dist) => {
-      return sum + parseFloat(dist.amount);
-    }, 0).toString();
+    return distributions
+      .reduce((sum, dist) => {
+        return sum + parseFloat(dist.amount);
+      }, 0)
+      .toString();
   };
 
   const handleDistribute = async (): Promise<void> => {
@@ -179,7 +184,7 @@ export default function DistributePage() {
       // Show confirmation modal instead of proceeding directly
       setPendingDistribution({
         totalAmount: calculateTotalAmount(),
-        recipientCount: distributions.length
+        recipientCount: distributions.length,
       });
       setShowConfirmModal(true);
     } catch (error) {
@@ -332,7 +337,9 @@ export default function DistributePage() {
 
         {/* Token Selection Dropdown */}
         <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
-          <h2 className="text-2xl font-semibold mb-4 text-white">Select Token</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-white">
+            Select Token
+          </h2>
           <select
             value={selectedToken.symbol}
             onChange={(e) => setSelectedToken(SUPPORTED_TOKENS[e.target.value])}

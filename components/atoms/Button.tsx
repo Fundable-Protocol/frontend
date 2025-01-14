@@ -1,7 +1,6 @@
 "use client";
 
 import { FC } from "react";
-// import { ConnectWallet } from "@/component_/ConnectWallet";
 import { usePathname } from "next/navigation";
 
 import { Button } from "../ui/button";
