@@ -10,7 +10,7 @@ const Section3 = () => {
       description:
         "Pay to multiple addresses in a single transaction.",
     },
-    { title: "Accounting", description: "Track total amount dist in real-time" },
+    { title: "Accounting", description: "Track total amount distributed in real-time" },
   ];
 
   return (
