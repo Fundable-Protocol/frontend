@@ -4,9 +4,9 @@ import localFont from "next/font/local";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import "./globals.css";
-import { StarknetProvider } from "@/component_/StarknetProvider";
 import Navbar from "@/components/organisms/Navbar";
 import { Toaster } from "react-hot-toast";
+import { StarknetProvider } from "@/lib/providers/StarknetProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
