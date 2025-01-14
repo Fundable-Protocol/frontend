@@ -4,12 +4,11 @@ import { useState, useCallback } from "react";
 import { useAccount } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
-import { ConnectWallet } from "@/component_/ConnectWallet";
 import { cairo, Call } from "starknet";
 import { validateDistribution } from "@/utils/validation";
 import { toast } from "react-hot-toast";
 import { parseUnits } from "ethers";
-import { RpcProvider, Contract } from "starknet";
+// import { RpcProvider } from "starknet";
 import { Switch } from "@/components/ui/switch";
 import TokenDistributionWallet from "@/components/ui/distribute/TokenDistributionWallet";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
@@ -26,9 +25,9 @@ interface TokenOption {
 }
 
 // Provider configuration
-const provider = new RpcProvider({
-  nodeUrl: process.env.NEXT_PUBLIC_RPC_URL ?? "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
-});
+// const provider = new RpcProvider({
+//   nodeUrl: process.env.NEXT_PUBLIC_RPC_URL ?? "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
+// });
 
 // Replace with your token contract address
 const CONTRACT_ADDRESS =
@@ -37,19 +36,22 @@ const CONTRACT_ADDRESS =
 const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
   USDC: {
     symbol: "USDC",
-    address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-    decimals: 6
+    address:
+      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    decimals: 6,
   },
   ETH: {
     symbol: "ETH",
-    address: "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
-    decimals: 18
+    address:
+      "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+    decimals: 18,
   },
   STRK: {
     symbol: "STRK",
-    address: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-    decimals: 18
-  }
+    address:
+      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    decimals: 18,
+  },
 };
 
 // Add proper type for CSV parsing result
@@ -59,7 +61,6 @@ export default function DistributePage() {
   const { address, status, account } = useAccount();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentTxHash, setCurrentTxHash] = useState<string | undefined>();
   const [distributionType, setDistributionType] = useState<
     "equal" | "weighted"
   >("equal");
@@ -122,9 +123,11 @@ export default function DistributePage() {
   };
 
   const calculateTotalAmount = () => {
-    return distributions.reduce((sum, dist) => {
-      return sum + parseFloat(dist.amount);
-    }, 0).toString();
+    return distributions
+      .reduce((sum, dist) => {
+        return sum + parseFloat(dist.amount);
+      }, 0)
+      .toString();
   };
 
   const handleDistribute = async (): Promise<void> => {
@@ -134,9 +137,6 @@ export default function DistributePage() {
     }
 
     try {
-      const { abi: ContractAbi } = await account.getClassAt(CONTRACT_ADDRESS);
-
-
       if (distributions.length === 0) {
         toast.error("No distributions added");
         return;
@@ -184,7 +184,7 @@ export default function DistributePage() {
       // Show confirmation modal instead of proceeding directly
       setPendingDistribution({
         totalAmount: calculateTotalAmount(),
-        recipientCount: distributions.length
+        recipientCount: distributions.length,
       });
       setShowConfirmModal(true);
     } catch (error) {
@@ -297,9 +297,6 @@ export default function DistributePage() {
         tx = result.transaction_hash;
       }
 
-      // Set current transaction hash for monitoring
-      setCurrentTxHash(tx);
-
       // Wait for receipt
       const receiptStatus = await account.waitForTransaction(tx);
 
@@ -323,7 +320,6 @@ export default function DistributePage() {
       );
     } finally {
       setIsLoading(false);
-      setCurrentTxHash(undefined);
     }
   };
 
@@ -341,7 +337,9 @@ export default function DistributePage() {
 
         {/* Token Selection Dropdown */}
         <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
-          <h2 className="text-2xl font-semibold mb-4 text-white">Select Token</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-white">
+            Select Token
+          </h2>
           <select
             value={selectedToken.symbol}
             onChange={(e) => setSelectedToken(SUPPORTED_TOKENS[e.target.value])}

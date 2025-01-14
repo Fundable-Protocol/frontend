@@ -3,14 +3,14 @@ import processingImg from "../../../public/imgs/section-3.png";
 
 const Section3 = () => {
   const contents = [
-    { title: "Create/Import Details", description: "" },
-    { title: "Add Addresses", description: "" },
+    { title: "Create/Import Details", description: "Add addresses and amounts manually or upload a CSV file" },
+    { title: "Choose Distribution", description: "Select the distribution method (equal, weighted)" },
     {
       title: "Mass Payout",
       description:
-        "Pay to multiple teams using different tokens in a single transaction.",
+        "Pay to multiple addresses in a single transaction.",
     },
-    { title: "Accounting", description: "" },
+    { title: "Accounting", description: "Track total amount distributed in real-time" },
   ];
 
   return (
@@ -56,7 +56,7 @@ const Section3 = () => {
               key={`section-3-${i}`}
               className="flex flex-col justify-center bg-[#8256FF] h-[0.79375rem] w-[0.79375rem] rounded-full"
             >
-              <div className="ml-8 flex flex-col">
+              <div className="ml-8 flex flex-col max-w-[calc(100vw-4rem)]">
                 <h3 className="text-[#444444] font-bold text-2xl font-bric text-nowrap hover:text-btn transition-all duration-200">
                   {cnt.title}
                 </h3>
