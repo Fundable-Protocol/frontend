@@ -9,13 +9,13 @@ import { Toaster } from "react-hot-toast";
 import { StarknetProvider } from "@/lib/providers/StarknetProvider";
 
 const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+  src: "../components/fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
 });
 
 const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
+  src: "../components/fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
 });

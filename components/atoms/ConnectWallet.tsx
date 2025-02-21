@@ -86,7 +86,7 @@ const ConnectWallet: FC = () => {
     <>
       <div className="relative">
         <Button
-          variant="gradient"
+          variant="default"
           size="lg"
           className=" p-4"
           onClick={showDialog}

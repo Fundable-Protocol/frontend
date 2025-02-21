@@ -72,7 +72,6 @@ export default function DistributePage() {
   const [pendingDistribution, setPendingDistribution] = useState<{
     totalAmount: string;
     recipientCount: number;
-    protocolFee: string;
   } | null>(null);
 
   const [protocolFeePercentage, setProtocolFeePercentage] = useState<number>(0);
@@ -211,17 +210,17 @@ export default function DistributePage() {
         return;
       }
 
-      // Calculate total amount and protocol fee
-      const totalAmount = calculateTotalAmount();
-      const totalAmountBigInt = BigInt(parseUnits(totalAmount, selectedToken.decimals));
-      const protocolFeeBigInt = (totalAmountBigInt * BigInt(protocolFeePercentage)) / BigInt(10000);
-      const protocolFeeString = (Number(protocolFeeBigInt) / 10 ** selectedToken.decimals).toString();
+      // Calculate total amount including protocol fee
+      const baseAmount = calculateTotalAmount();
+      const baseAmountBigInt = BigInt(parseUnits(baseAmount, selectedToken.decimals));
+      const protocolFeeBigInt = (baseAmountBigInt * BigInt(protocolFeePercentage)) / BigInt(10000);
+      const totalAmountWithFee = baseAmountBigInt + protocolFeeBigInt;
+      const totalAmountString = (Number(totalAmountWithFee) / 10 ** selectedToken.decimals).toString();
 
-      // Show confirmation modal instead of proceeding directly
+      // Show confirmation modal with total amount including fee
       setPendingDistribution({
-        totalAmount,
+        totalAmount: totalAmountString,
         recipientCount: distributions.length,
-        protocolFee: protocolFeeString,
       });
       setShowConfirmModal(true);
     } catch (error) {
@@ -554,7 +553,6 @@ export default function DistributePage() {
         totalAmount={pendingDistribution?.totalAmount || "0"}
         recipientCount={pendingDistribution?.recipientCount || 0}
         selectedToken={selectedToken.symbol}
-        protocolFee={pendingDistribution?.protocolFee}
       />
     </div>
   );

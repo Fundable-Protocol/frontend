@@ -84,3 +84,14 @@ body {
     @apply grid grid-cols-[repeat(auto-fit,minmax(350px,1fr))];
   }
 }
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
