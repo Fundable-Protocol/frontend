@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SUPPORTED_TOKENS, TokenOption } from "@/lib/constants";
+import { SUPPORTED_TOKENS } from "@/lib/constants";
 import { Stream } from "@/types/stream";
 
 interface CreateStreamFormProps {
@@ -79,7 +79,7 @@ export function CreateStreamForm({ onSubmit, onCancel }: CreateStreamFormProps) 
             onChange={(e) => setFormData({ ...formData, token: e.target.value })}
             className="w-full bg-[#1a1a1a] text-white border border-[#5b21b6] border-opacity-40 rounded-lg px-4 py-2"
           >
-            {Object.entries(SUPPORTED_TOKENS).map(([symbol, token]) => (
+            {Object.entries(SUPPORTED_TOKENS).map(([symbol]) => (
               <option key={symbol} value={symbol}>
                 {symbol}
               </option>

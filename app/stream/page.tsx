@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useAccount } from "@starknet-react/core";
 import { toast } from "react-hot-toast";
-import { parseUnits } from "ethers";
 import { Stream } from "@/types/stream";
 import TokenStreamingWallet from "@/components/ui/stream/TokenStreamingWallet";
 import { StreamConfirmationModal } from "@/components/ui/stream/StreamConfirmationModal";
@@ -14,7 +13,6 @@ export default function StreamPage() {
   const { address, status, account } = useAccount();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [streams, setStreams] = useState<Stream[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingStream, setPendingStream] = useState<Partial<Stream> | null>(null);
 
@@ -27,7 +25,6 @@ export default function StreamPage() {
     if (!pendingStream || !account) return;
 
     setShowConfirmModal(false);
-    setIsLoading(true);
     const loadingToast = toast.loading("Creating stream...");
 
     try {
@@ -41,7 +38,6 @@ export default function StreamPage() {
       toast.dismiss(loadingToast);
       toast.error(`Failed to create stream: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
-      setIsLoading(false);
       setPendingStream(null);
     }
   };
