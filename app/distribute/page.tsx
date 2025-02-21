@@ -29,7 +29,7 @@ interface TokenOption {
 //   nodeUrl: process.env.NEXT_PUBLIC_RPC_URL ?? "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
 // });
 
-// Replace with your token contract address
+
 const CONTRACT_ADDRESS =
   "0x67a27274b63fa3b070cabf7adf59e7b1c1e5b768b18f84b50f6cb85f59c42e5";
 
