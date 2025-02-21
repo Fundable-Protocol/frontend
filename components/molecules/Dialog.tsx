@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef, useCallback } from "react";
 
 const Dialog = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
@@ -13,9 +13,9 @@ const Dialog = ({ children }: { children: ReactNode }) => {
   const showDialogParams = searchParams.get("showDialog");
   const showDialog = showDialogParams === "true";
 
-  const closeDialog = () => {
+  const closeDialog = useCallback(() => {
     router.replace(window.location.pathname);
-  };
+  }, [router]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -34,7 +34,7 @@ const Dialog = ({ children }: { children: ReactNode }) => {
       dialog?.removeEventListener("close", closeDialog);
       document.body.style.overflow = "";
     };
-  }, [showDialog]);
+  }, [showDialog, closeDialog]);
 
   return (
     <dialog ref={dialogRef} className="relative backdrop:transparent w-full">

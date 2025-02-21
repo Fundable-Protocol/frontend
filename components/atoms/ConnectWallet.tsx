@@ -48,7 +48,7 @@ const ConnectWallet: FC = () => {
     if (isConnected && activeConnector && !savedConnectorId) {
       localStorage.setItem("walletConnectorId", activeConnector.id);
     }
-  }, [isConnected, isClient]);
+  }, [isConnected, isClient, activeConnector, connect, connectors]);
 
   const showDialog = () => {
     if (isConnected) {

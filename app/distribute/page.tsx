@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAccount } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
@@ -31,7 +31,7 @@ interface TokenOption {
 
 // Replace with your token contract address
 const CONTRACT_ADDRESS =
-  "0x288a25635f7c57607b4e017a3439f9018441945246fb5ca3424d8148dd580cc";
+  "0x67a27274b63fa3b070cabf7adf59e7b1c1e5b768b18f84b50f6cb85f59c42e5";
 
 const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
   USDC: {
@@ -72,8 +72,38 @@ export default function DistributePage() {
   const [pendingDistribution, setPendingDistribution] = useState<{
     totalAmount: string;
     recipientCount: number;
+    protocolFee: string;
   } | null>(null);
 
+  const [protocolFeePercentage, setProtocolFeePercentage] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchProtocolFee = async () => {
+      if (!account) return;
+
+      
+      try {
+        const result = await account.callContract({
+          contractAddress: CONTRACT_ADDRESS,
+          entrypoint: "get_protocol_fee_percent",
+          calldata: []
+        });
+
+        if (result) {
+          // Convert hex string to decimal
+          const hexValue = result[0].toString();
+          const decimalValue = parseInt(hexValue, 16);
+          setProtocolFeePercentage(decimalValue);
+          console.log("protocol fee percentage", decimalValue);
+        }
+      } catch (error) {
+        console.error("Error fetching protocol fee:", error);
+        toast.error("Failed to fetch protocol fee");
+      }
+    };
+
+    fetchProtocolFee();
+  }, [account]);
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
@@ -181,10 +211,17 @@ export default function DistributePage() {
         return;
       }
 
+      // Calculate total amount and protocol fee
+      const totalAmount = calculateTotalAmount();
+      const totalAmountBigInt = BigInt(parseUnits(totalAmount, selectedToken.decimals));
+      const protocolFeeBigInt = (totalAmountBigInt * BigInt(protocolFeePercentage)) / BigInt(10000);
+      const protocolFeeString = (Number(protocolFeeBigInt) / 10 ** selectedToken.decimals).toString();
+
       // Show confirmation modal instead of proceeding directly
       setPendingDistribution({
-        totalAmount: calculateTotalAmount(),
+        totalAmount,
         recipientCount: distributions.length,
+        protocolFee: protocolFeeString,
       });
       setShowConfirmModal(true);
     } catch (error) {
@@ -204,13 +241,11 @@ export default function DistributePage() {
       const recipients = distributions.map((dist) => dist.address);
 
       let tx;
-      console.log(distributionType);
       if (!account) {
         throw new Error("Account not found");
       }
-      console.log(account);
+
       if (distributionType === "equal") {
-        // Add 1 token (10^18) to each amount // 1 token in wei
         const amounts = distributions.map((dist) =>
           BigInt(parseUnits(dist.amount, selectedToken.decimals))
         );
@@ -218,15 +253,17 @@ export default function DistributePage() {
           (sum, amount) => sum + BigInt(amount),
           BigInt(0)
         );
-        console.log("Amount", totalAmount);
-        const totalAmountString = totalAmount.toString(); // Converts BigInt to string, removing the 'n'
-        console.log("Amount String", totalAmountString);
-        const low =
-          BigInt(totalAmountString) &
-          BigInt("0xffffffffffffffffffffffffffffffff");
-        const high = BigInt(totalAmountString) >> BigInt(128);
-        console.log("Low", low.toString());
-        console.log("High", high.toString());
+
+        // Calculate protocol fee
+        const protocolFee = (totalAmount * BigInt(protocolFeePercentage)) / BigInt(10000);
+        const totalAmountWithFee = totalAmount + protocolFee;
+
+        console.log("Base Amount:", totalAmount.toString());
+        console.log("Protocol Fee:", protocolFee.toString());
+        console.log("Total Amount with Fee:", totalAmountWithFee.toString());
+
+        const low = totalAmountWithFee & BigInt("0xffffffffffffffffffffffffffffffff");
+        const high = totalAmountWithFee >> BigInt(128);
 
         try {
           const amountPerRecipient = cairo.uint256(amounts[0]);
@@ -262,15 +299,24 @@ export default function DistributePage() {
       } else {
         console.log("Weighted distribution");
         const amounts = distributions.map((dist) =>
-          parseUnits(dist.amount, 18)
+          parseUnits(dist.amount, selectedToken.decimals)
         );
         const totalAmount = amounts.reduce(
           (sum, amount) => sum + BigInt(amount),
           BigInt(0)
         );
-        const low = totalAmount & BigInt("0xffffffffffffffffffffffffffffffff");
-        const high = totalAmount >> BigInt(128);
-        console.log("executing calls");
+
+        // Calculate protocol fee
+        const protocolFee = (totalAmount * BigInt(protocolFeePercentage)) / BigInt(10000);
+        const totalAmountWithFee = totalAmount + protocolFee;
+
+        console.log("Base Amount:", totalAmount.toString());
+        console.log("Protocol Fee:", protocolFee.toString());
+        console.log("Total Amount with Fee:", totalAmountWithFee.toString());
+
+        const low = totalAmountWithFee & BigInt("0xffffffffffffffffffffffffffffffff");
+        const high = totalAmountWithFee >> BigInt(128);
+
         const calls: Call[] = [
           {
             entrypoint: "approve",
@@ -292,7 +338,6 @@ export default function DistributePage() {
             ],
           },
         ];
-        console.log("calls", calls);
         const result = await account.execute(calls);
         tx = result.transaction_hash;
       }
@@ -509,6 +554,7 @@ export default function DistributePage() {
         totalAmount={pendingDistribution?.totalAmount || "0"}
         recipientCount={pendingDistribution?.recipientCount || 0}
         selectedToken={selectedToken.symbol}
+        protocolFee={pendingDistribution?.protocolFee}
       />
     </div>
   );
