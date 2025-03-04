@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, Suspense, useEffect, useState } from "react";
+import { FC, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -16,43 +16,28 @@ import {
 import Image from "next/image";
 import { Button } from "../ui/button";
 import Dialog from "../molecules/Dialog";
+import { useIsMounted } from "@/lib/hooks/useIsMounted";
 
 const ConnectWallet: FC = () => {
+  const { hasPrevWallet, isMounted } = useIsMounted();
   const router = useRouter();
 
-  const [isClient, setIsClient] = useState(false);
-  const [showDisconnect, SetshowDisconnect] = useState(false);
+  const [showDisconnect, setShowDisconnect] = useState(false);
 
-  const { address, isConnected, connector: activeConnector } = useAccount();
+  const { address, isConnected } = useAccount();
 
   const { connectors } = useInjectedConnectors({
     recommended: [argent(), braavos()],
     includeRecommended: "onlyIfNoConnectors",
-    order: "random",
+    order: "alphabetical",
   });
 
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
 
-  useEffect(() => {
-    setIsClient(true);
-
-    const savedConnectorId = localStorage.getItem("walletConnectorId");
-
-    if (savedConnectorId && !isConnected) {
-      const connector = connectors.find((c) => c.id === savedConnectorId);
-
-      if (connector) connect({ connector });
-    }
-
-    if (isConnected && activeConnector && !savedConnectorId) {
-      localStorage.setItem("walletConnectorId", activeConnector.id);
-    }
-  }, [isConnected, isClient, activeConnector, connect, connectors]);
-
   const showDialog = () => {
     if (isConnected) {
-      SetshowDisconnect((prev) => !prev);
+      setShowDisconnect((prev) => !prev);
       return;
     }
 
@@ -71,17 +56,18 @@ const ConnectWallet: FC = () => {
 
   const handleWalletConnect = (connector: (typeof connectors)[number]) => {
     connect({ connector });
+    localStorage.setItem("starknetConnectorId", connector.id);
     hideDialog();
   };
 
   const disconnectWallet = () => {
     disconnect();
-    localStorage.removeItem("walletConnectorId");
-    SetshowDisconnect(false);
+    localStorage.removeItem("starknetConnectorId");
+    setShowDisconnect(false);
   };
 
   const userAddress = `${address?.slice(0, 7)}...${address?.slice(-5)}`;
-
+  console.log(hasPrevWallet);
   return (
     <>
       <div className="relative">
@@ -91,7 +77,9 @@ const ConnectWallet: FC = () => {
           className=" p-4"
           onClick={showDialog}
         >
-          {address ? (
+          {!hasPrevWallet ? (
+            "Connect Wallet"
+          ) : address ? (
             <div className="flex items-center">
               <span className="mr-2">{userAddress}</span>
               <Image
@@ -103,7 +91,7 @@ const ConnectWallet: FC = () => {
               />
             </div>
           ) : (
-            "Connect Wallet"
+            "Loading Wallet"
           )}
         </Button>
         {showDisconnect && (
@@ -118,39 +106,39 @@ const ConnectWallet: FC = () => {
         )}
       </div>
 
-      {isClient && (
-        <Suspense fallback={<div>Loading...</div>}>
-          <Dialog>
-            <div className="rounded-2xl bg-white py-6 text-center">
-              <h2 className="text-[#8B8E97] font-inter pb-3 text-lg font-medium">
-                Choose your preferred wallet
-              </h2>
-              <div className="bg-white flex flex-col px-4">
-                {connectors.map((cnt) => (
-                  <div
-                    key={cnt.id}
-                    className="flex items-center justify-between cursor-pointer hover:bg-slate-100 py-4 px-8 hover:rounded-lg"
-                    onClick={() => handleWalletConnect(cnt)}
-                    aria-label={cnt.name}
-                  >
-                    <span className="text-xl font-semibold capitalize">
-                      {cnt.name}
-                    </span>
+      <Dialog>
+        <div className="rounded-2xl bg-white py-6 text-center">
+          <h2 className="text-[#8B8E97] font-inter pb-3 text-lg font-medium">
+            Choose your preferred wallet
+          </h2>
+          <div className="bg-white flex flex-col px-4">
+            {connectors.map((cnt) => (
+              <div
+                key={cnt.id}
+                className="flex items-center justify-between cursor-pointer hover:bg-slate-100 py-4 px-8 hover:rounded-lg"
+                onClick={() => handleWalletConnect(cnt)}
+                aria-label={cnt.name}
+              >
+                <span className="text-xl font-semibold capitalize">
+                  {cnt.name}
+                </span>
 
-                    <Image
-                      src={typeof cnt.icon === 'string' ? cnt.icon : cnt.icon.light}
-                      width={400}
-                      height={400}
-                      alt={cnt.name}
-                      className="h-10 w-10"
-                    />
-                  </div>
-                ))}
+                {isMounted && (
+                  <Image
+                    src={
+                      typeof cnt.icon === "string" ? cnt.icon : cnt.icon.light
+                    }
+                    width={400}
+                    height={400}
+                    alt={cnt.name}
+                    className="h-10 w-10"
+                  />
+                )}
               </div>
-            </div>
-          </Dialog>
-        </Suspense>
-      )}
+            ))}
+          </div>
+        </div>
+      </Dialog>
     </>
   );
 };
