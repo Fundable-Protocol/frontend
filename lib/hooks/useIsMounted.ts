@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 
 export function useIsMounted() {
   const [isMounted, setIsMounted] = useState(false);
-  const [hasPrevWallet, setHasPrevWallet] = useState(true);
+  const [hasPrevWallet, setHasPrevWallet] = useState<boolean>(
+    typeof window !== "undefined" &&
+      !!localStorage.getItem("starknetConnectorId")
+  );
+
   useEffect(() => {
     setIsMounted(true);
-
-    const isPreviousConnected = localStorage.getItem("starknetConnectorId");
-
-    if (!isPreviousConnected) setHasPrevWallet(false);
   }, []);
-  return { isMounted, hasPrevWallet };
+
+  return { isMounted, hasPrevWallet, setHasPrevWallet };
 }

@@ -1,9 +1,9 @@
+// components/ConnectWallet.tsx
 "use client";
 
 import { FC, useState } from "react";
-
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
 import {
   argent,
   braavos,
@@ -12,24 +12,21 @@ import {
   useDisconnect,
   useInjectedConnectors,
 } from "@starknet-react/core";
-
 import Image from "next/image";
 import { Button } from "../ui/button";
 import Dialog from "../molecules/Dialog";
 import { useIsMounted } from "@/lib/hooks/useIsMounted";
+import Link from "next/link";
 
 const ConnectWallet: FC = () => {
-  const { hasPrevWallet, isMounted } = useIsMounted();
+  const { isMounted, hasPrevWallet, setHasPrevWallet } = useIsMounted();
   const router = useRouter();
-
   const [showDisconnect, setShowDisconnect] = useState(false);
-
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, status } = useAccount();
 
   const { connectors } = useInjectedConnectors({
     recommended: [argent(), braavos()],
-    includeRecommended: "onlyIfNoConnectors",
-    order: "alphabetical",
+    order: "alphabetical", // stable order
   });
 
   const { connect } = useConnect();
@@ -40,70 +37,102 @@ const ConnectWallet: FC = () => {
       setShowDisconnect((prev) => !prev);
       return;
     }
-
     const params = new URLSearchParams(window.location.search);
     params.set("showDialog", "true");
-
     router.replace(`?${params.toString()}`);
   };
 
   const hideDialog = () => {
     const params = new URLSearchParams(window.location.search);
     params.delete("showDialog");
-
     router.replace(`?${params.toString()}`);
   };
 
   const handleWalletConnect = (connector: (typeof connectors)[number]) => {
     connect({ connector });
     localStorage.setItem("starknetConnectorId", connector.id);
+    setHasPrevWallet(true);
     hideDialog();
   };
 
   const disconnectWallet = () => {
     disconnect();
+    setHasPrevWallet(false);
     localStorage.removeItem("starknetConnectorId");
     setShowDisconnect(false);
   };
 
-  const userAddress = `${address?.slice(0, 7)}...${address?.slice(-5)}`;
-  console.log(hasPrevWallet);
+  const userAddress = address
+    ? `${address.slice(0, 7)}...${address.slice(-5)}`
+    : "";
+
+  if (!isMounted) {
+    return (
+      <Button
+        variant="gradient"
+        size="lg"
+        className="p-4 flex gap-x-1"
+        disabled
+      >
+        <Loader2 className="animate-spin" width={20} height={20} />
+        Please wait
+      </Button>
+    );
+  }
+
   return (
     <>
       <div className="relative">
-        <Button
-          variant="gradient"
-          size="lg"
-          className=" p-4"
-          onClick={showDialog}
-        >
-          {!hasPrevWallet ? (
-            "Connect Wallet"
-          ) : address ? (
+        {!hasPrevWallet && status === "disconnected" ? (
+          <Button
+            variant="gradient"
+            size="lg"
+            className="p-4"
+            onClick={showDialog}
+          >
+            Connect Wallet
+          </Button>
+        ) : address ? (
+          <Button
+            variant="gradient"
+            size="lg"
+            className="p-4"
+            onClick={showDialog}
+          >
             <div className="flex items-center">
               <span className="mr-2">{userAddress}</span>
               <Image
-                src={`/svgs/carret_down.svg`}
+                src="/svgs/carret_down.svg"
                 width={32}
                 height={32}
                 alt="carret_down"
                 className="h-auto w-auto"
               />
             </div>
-          ) : (
-            "Loading Wallet"
-          )}
-        </Button>
-        {showDisconnect && (
+          </Button>
+        ) : (
           <Button
-            className="absolute top-12 right-0 p-4"
-            variant="outline"
+            variant="gradient"
             size="lg"
-            onClick={disconnectWallet}
+            className="p-4 flex gap-x-1"
+            disabled
           >
-            Disconnect wallet
+            <Loader2 className="animate-spin" width={20} height={20} />
+            Please wait
           </Button>
         )}
+
+        {showDisconnect ? (
+          <Link href="/" onClick={disconnectWallet}>
+            <Button
+              className="absolute top-12 right-0 p-4"
+              variant="outline"
+              size="lg"
+            >
+              Disconnect wallet
+            </Button>
+          </Link>
+        ) : null}
       </div>
 
       <Dialog>
@@ -122,18 +151,14 @@ const ConnectWallet: FC = () => {
                 <span className="text-xl font-semibold capitalize">
                   {cnt.name}
                 </span>
-
-                {isMounted && (
-                  <Image
-                    src={
-                      typeof cnt.icon === "string" ? cnt.icon : cnt.icon.light
-                    }
-                    width={400}
-                    height={400}
-                    alt={cnt.name}
-                    className="h-10 w-10"
-                  />
-                )}
+                <Image
+                  src={typeof cnt.icon === "string" ? cnt.icon : cnt.icon.light}
+                  width={40}
+                  height={40}
+                  alt={cnt.name}
+                  className="h-10 w-10"
+                  unoptimized
+                />
               </div>
             ))}
           </div>
