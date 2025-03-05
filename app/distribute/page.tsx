@@ -12,6 +12,8 @@ import { parseUnits } from "ethers";
 import { Switch } from "@/components/ui/switch";
 import TokenDistributionWallet from "@/components/ui/distribute/TokenDistributionWallet";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { useIsMounted } from "@/lib/hooks/useIsMounted";
+import DistributeSkeleton from "@/components/ui/distribute/DistributeSkeleton";
 
 interface Distribution {
   address: string;
@@ -28,7 +30,6 @@ interface TokenOption {
 // const provider = new RpcProvider({
 //   nodeUrl: process.env.NEXT_PUBLIC_RPC_URL ?? "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
 // });
-
 
 const CONTRACT_ADDRESS =
   "0x67a27274b63fa3b070cabf7adf59e7b1c1e5b768b18f84b50f6cb85f59c42e5";
@@ -58,6 +59,7 @@ const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
 type CSVRow = [string, string];
 
 export default function DistributePage() {
+  const { isMounted, hasPrevWallet } = useIsMounted();
   const { address, status, account } = useAccount();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -80,12 +82,11 @@ export default function DistributePage() {
     const fetchProtocolFee = async () => {
       if (!account) return;
 
-      
       try {
         const result = await account.callContract({
           contractAddress: CONTRACT_ADDRESS,
           entrypoint: "get_protocol_fee_percent",
-          calldata: []
+          calldata: [],
         });
 
         if (result) {
@@ -212,10 +213,16 @@ export default function DistributePage() {
 
       // Calculate total amount including protocol fee
       const baseAmount = calculateTotalAmount();
-      const baseAmountBigInt = BigInt(parseUnits(baseAmount, selectedToken.decimals));
-      const protocolFeeBigInt = (baseAmountBigInt * BigInt(protocolFeePercentage)) / BigInt(10000);
+      const baseAmountBigInt = BigInt(
+        parseUnits(baseAmount, selectedToken.decimals)
+      );
+      const protocolFeeBigInt =
+        (baseAmountBigInt * BigInt(protocolFeePercentage)) / BigInt(10000);
       const totalAmountWithFee = baseAmountBigInt + protocolFeeBigInt;
-      const totalAmountString = (Number(totalAmountWithFee) / 10 ** selectedToken.decimals).toString();
+      const totalAmountString = (
+        Number(totalAmountWithFee) /
+        10 ** selectedToken.decimals
+      ).toString();
 
       // Show confirmation modal with total amount including fee
       setPendingDistribution({
@@ -254,14 +261,16 @@ export default function DistributePage() {
         );
 
         // Calculate protocol fee
-        const protocolFee = (totalAmount * BigInt(protocolFeePercentage)) / BigInt(10000);
+        const protocolFee =
+          (totalAmount * BigInt(protocolFeePercentage)) / BigInt(10000);
         const totalAmountWithFee = totalAmount + protocolFee;
 
         console.log("Base Amount:", totalAmount.toString());
         console.log("Protocol Fee:", protocolFee.toString());
         console.log("Total Amount with Fee:", totalAmountWithFee.toString());
 
-        const low = totalAmountWithFee & BigInt("0xffffffffffffffffffffffffffffffff");
+        const low =
+          totalAmountWithFee & BigInt("0xffffffffffffffffffffffffffffffff");
         const high = totalAmountWithFee >> BigInt(128);
 
         try {
@@ -306,14 +315,16 @@ export default function DistributePage() {
         );
 
         // Calculate protocol fee
-        const protocolFee = (totalAmount * BigInt(protocolFeePercentage)) / BigInt(10000);
+        const protocolFee =
+          (totalAmount * BigInt(protocolFeePercentage)) / BigInt(10000);
         const totalAmountWithFee = totalAmount + protocolFee;
 
         console.log("Base Amount:", totalAmount.toString());
         console.log("Protocol Fee:", protocolFee.toString());
         console.log("Total Amount with Fee:", totalAmountWithFee.toString());
 
-        const low = totalAmountWithFee & BigInt("0xffffffffffffffffffffffffffffffff");
+        const low =
+          totalAmountWithFee & BigInt("0xffffffffffffffffffffffffffffffff");
         const high = totalAmountWithFee >> BigInt(128);
 
         const calls: Call[] = [
@@ -367,8 +378,11 @@ export default function DistributePage() {
     }
   };
 
-  // Show connect wallet message if not connected
-  if (status !== "connected" || !address) {
+  if (!isMounted) {
+    return <DistributeSkeleton />;
+  }
+
+  if (!hasPrevWallet && status === "disconnected") {
     return <TokenDistributionWallet />;
   }
 
@@ -539,7 +553,7 @@ export default function DistributePage() {
               isLoading || distributions.length === 0
                 ? "opacity-50 cursor-not-allowed from-gray-500 to-gray-600"
                 : "hover:from-[#B102CD] hover:to-[#440495]"
-            } 
+            }
             transition-all`}
         >
           {isLoading ? "Processing..." : "Distribute Tokens"}
