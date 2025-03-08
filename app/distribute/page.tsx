@@ -73,6 +73,9 @@ export default function DistributePage() {
 
   const [protocolFeePercentage, setProtocolFeePercentage] = useState<number>(0);
 
+  // Add new state for amount input type
+  const [amountInputType, setAmountInputType] = useState<"perAddress" | "lumpSum">("perAddress");
+
   // Add new state for user's balance
   // const [userBalance, setUserBalance] = useState<bigint>(BigInt(0));
 
@@ -498,62 +501,76 @@ export default function DistributePage() {
         {/* Add Equal Amount Input when type is 'equal' */}
         {distributionType === "equal" && (
           <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
-            <h2 className="text-xl font-semibold mb-4 text-white">Amount Distribution</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-white">Amount Distribution</h2>
+              <select
+                value={amountInputType}
+                onChange={(e) => setAmountInputType(e.target.value as "perAddress" | "lumpSum")}
+                className="bg-[#1a1a1a] text-white border border-[#5b21b6] border-opacity-40 rounded-lg px-4 py-2 focus:outline-none focus:border-[#B102CD]"
+              >
+                <option value="perAddress">Amount per Address</option>
+                <option value="lumpSum">Lump Sum</option>
+              </select>
+            </div>
+
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Lump Sum to Distribute</label>
-                <div className="flex gap-4">
+              {amountInputType === "lumpSum" ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Lump Sum to Distribute</label>
+                  <div className="flex gap-4">
+                    <input
+                      type="text"
+                      placeholder="Enter total amount to distribute"
+                      value={lumpSum}
+                      onChange={(e) => setLumpSum(e.target.value)}
+                      className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
+                    />
+                    <button
+                      onClick={() => {
+                        if (distributions.length === 0) {
+                          toast.error("Add some addresses first");
+                          return;
+                        }
+                        if (!lumpSum || isNaN(Number(lumpSum))) {
+                          toast.error("Please enter a valid lump sum amount");
+                          return;
+                        }
+                        const perAddressAmount = (Number(lumpSum) / distributions.length).toFixed(2);
+                        setEqualAmount(perAddressAmount);
+                        setDistributions(prev =>
+                          prev.map(dist => ({
+                            ...dist,
+                            amount: perAddressAmount
+                          }))
+                        );
+                        toast.success(`Calculated ${perAddressAmount} per address for ${distributions.length} addresses`);
+                      }}
+                      className="px-6 py-2 bg-gradient-to-r from-[#440495] to-[#B102CD] hover:from-[#B102CD] hover:to-[#440495] text-white font-bold rounded-lg transition-all"
+                    >
+                      Calculate
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Amount per Address</label>
                   <input
                     type="text"
-                    placeholder="Enter total amount to distribute"
-                    value={lumpSum}
-                    onChange={(e) => setLumpSum(e.target.value)}
-                    className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
-                  />
-                  <button
-                    onClick={() => {
-                      if (distributions.length === 0) {
-                        toast.error("Add some addresses first");
-                        return;
-                      }
-                      if (!lumpSum || isNaN(Number(lumpSum))) {
-                        toast.error("Please enter a valid lump sum amount");
-                        return;
-                      }
-                      const perAddressAmount = (Number(lumpSum) / distributions.length).toFixed(3);
-                      setEqualAmount(perAddressAmount);
-                      setDistributions(prev =>
-                        prev.map(dist => ({
+                    placeholder="Amount to distribute per address"
+                    value={equalAmount}
+                    onChange={(e) => {
+                      setEqualAmount(e.target.value);
+                      setDistributions((prev) =>
+                        prev.map((dist) => ({
                           ...dist,
-                          amount: perAddressAmount
+                          amount: e.target.value,
                         }))
                       );
-                      toast.success(`Calculated ${perAddressAmount} per address for ${distributions.length} addresses`);
                     }}
-                    className="px-6 py-2 bg-gradient-to-r from-[#440495] to-[#B102CD] hover:from-[#B102CD] hover:to-[#440495] text-white font-bold rounded-lg transition-all"
-                  >
-                    Calculate
-                  </button>
+                    className="w-full bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
+                  />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Amount per Address</label>
-                <input
-                  type="text"
-                  placeholder="Amount to distribute per address"
-                  value={equalAmount}
-                  onChange={(e) => {
-                    setEqualAmount(e.target.value);
-                    setDistributions((prev) =>
-                      prev.map((dist) => ({
-                        ...dist,
-                        amount: e.target.value,
-                      }))
-                    );
-                  }}
-                  className="w-full bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
-                />
-              </div>
+              )}
             </div>
           </div>
         )}
