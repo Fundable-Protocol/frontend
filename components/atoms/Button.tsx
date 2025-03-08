@@ -1,11 +1,11 @@
 "use client";
 
 import { FC } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Button } from "../ui/button";
 import ConnectWallet from "./ConnectWallet";
-import Link from "next/link";
 
 interface ButtonProps {
   onClick?: () => void;

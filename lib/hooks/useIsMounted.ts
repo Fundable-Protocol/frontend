@@ -10,7 +10,9 @@ export function useIsMounted() {
   );
 
   useEffect(() => {
-    setIsMounted(true);
+    setTimeout(() => {
+      setIsMounted(true);
+    }, 300);
   }, []);
 
   return { isMounted, hasPrevWallet, setHasPrevWallet };

@@ -1,13 +1,8 @@
-// components/ClientAutoConnect.tsx
 "use client";
 
-import dynamic from "next/dynamic";
-
-// Dynamically import AutoConnect with ssr disabled
-const AutoConnect = dynamic(() => import("@/components/ui/AutoConnect"), {
-  ssr: false,
-});
+import { useAutoConnect } from "../hooks/useAutoConnect";
 
 export default function ClientAutoConnect() {
-  return <AutoConnect />;
+  useAutoConnect();
+  return null;
 }
