@@ -74,6 +74,9 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.15)
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -2802,8 +2805,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  zod@3.23.8:
-    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+  zod@3.24.2:
+    resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
 snapshots:
 
@@ -3265,8 +3268,8 @@ snapshots:
       get-starknet-core: 4.0.0
       react: 19.0.0-rc-66855b96-20241106
       starknet: 6.11.0
-      viem: 2.21.51(typescript@5.7.2)(zod@3.23.8)
-      zod: 3.23.8
+      viem: 2.21.51(typescript@5.7.2)(zod@3.24.2)
+      zod: 3.24.2
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -3511,10 +3514,10 @@ snapshots:
       fs-extra: 10.1.0
       yargs: 17.7.2
 
-  abitype@1.0.6(typescript@5.7.2)(zod@3.23.8):
+  abitype@1.0.6(typescript@5.7.2)(zod@3.24.2):
     optionalDependencies:
       typescript: 5.7.2
-      zod: 3.23.8
+      zod: 3.24.2
 
   acorn-jsx@5.3.2(acorn@8.14.0):
     dependencies:
@@ -4914,14 +4917,14 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  ox@0.1.2(typescript@5.7.2)(zod@3.23.8):
+  ox@0.1.2(typescript@5.7.2)(zod@3.24.2):
     dependencies:
       '@adraffy/ens-normalize': 1.11.0
       '@noble/curves': 1.6.0
       '@noble/hashes': 1.5.0
       '@scure/bip32': 1.5.0
       '@scure/bip39': 1.4.0
-      abitype: 1.0.6(typescript@5.7.2)(zod@3.23.8)
+      abitype: 1.0.6(typescript@5.7.2)(zod@3.24.2)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.7.2
@@ -5616,15 +5619,15 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  viem@2.21.51(typescript@5.7.2)(zod@3.23.8):
+  viem@2.21.51(typescript@5.7.2)(zod@3.24.2):
     dependencies:
       '@noble/curves': 1.6.0
       '@noble/hashes': 1.5.0
       '@scure/bip32': 1.5.0
       '@scure/bip39': 1.4.0
-      abitype: 1.0.6(typescript@5.7.2)(zod@3.23.8)
+      abitype: 1.0.6(typescript@5.7.2)(zod@3.24.2)
       isows: 1.0.6(ws@8.18.0)
-      ox: 0.1.2(typescript@5.7.2)(zod@3.23.8)
+      ox: 0.1.2(typescript@5.7.2)(zod@3.24.2)
       webauthn-p256: 0.0.10
       ws: 8.18.0
     optionalDependencies:
@@ -5768,4 +5771,4 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod@3.23.8: {}
+  zod@3.24.2: {}
