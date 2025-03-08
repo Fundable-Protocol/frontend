@@ -27,6 +27,8 @@ const ConnectWallet: FC = () => {
   const { connectors } = useInjectedConnectors({
     recommended: [argent(), braavos()],
     order: "alphabetical", // stable order
+    includeRecommended: "onlyIfNoConnectors",
+    shimLegacyConnectors: ["braavos", "argent", "braavos-legacy", "metamask"],
   });
 
   const { connect } = useConnect();

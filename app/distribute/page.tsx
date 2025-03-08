@@ -8,7 +8,6 @@ import { cairo, Call } from "starknet";
 import { validateDistribution } from "@/utils/validation";
 import { toast } from "react-hot-toast";
 import { parseUnits } from "ethers";
-// import { RpcProvider } from "starknet";
 import { Switch } from "@/components/ui/switch";
 import TokenDistributionWallet from "@/components/ui/distribute/TokenDistributionWallet";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
@@ -26,11 +25,6 @@ interface TokenOption {
   decimals: number;
 }
 
-// Provider configuration
-// const provider = new RpcProvider({
-//   nodeUrl: process.env.NEXT_PUBLIC_RPC_URL ?? "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
-// });
-
 const CONTRACT_ADDRESS =
   "0x67a27274b63fa3b070cabf7adf59e7b1c1e5b768b18f84b50f6cb85f59c42e5";
 
@@ -38,7 +32,7 @@ const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
   USDC: {
     symbol: "USDC",
     address:
-      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
     decimals: 6,
   },
   ETH: {
@@ -67,6 +61,7 @@ export default function DistributePage() {
     "equal" | "weighted"
   >("equal");
   const [equalAmount, setEqualAmount] = useState<string>("");
+  const [lumpSum, setLumpSum] = useState<string>("");
   const [selectedToken, setSelectedToken] = useState<TokenOption>(
     SUPPORTED_TOKENS.STRK
   );
@@ -77,6 +72,9 @@ export default function DistributePage() {
   } | null>(null);
 
   const [protocolFeePercentage, setProtocolFeePercentage] = useState<number>(0);
+
+  // Add new state for user's balance
+  // const [userBalance, setUserBalance] = useState<bigint>(BigInt(0));
 
   useEffect(() => {
     const fetchProtocolFee = async () => {
@@ -104,6 +102,58 @@ export default function DistributePage() {
 
     fetchProtocolFee();
   }, [account]);
+
+  // // Add function to fetch user's balance
+  // const fetchUserBalance = useCallback(async () => {
+  //   if (!account || !address) return;
+
+  //   try {
+  //     const result = await account.callContract({
+  //       contractAddress: selectedToken.address,
+  //       entrypoint: "balanceOf",
+  //       calldata: [address],
+  //     });
+
+  //     if (result && result.length >= 2) {
+  //       const low = BigInt(result[0].toString());
+  //       const high = BigInt(result[1].toString());
+  //       const balance = (high << BigInt(128)) + low;
+  //       setUserBalance(balance);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching balance:", error);
+  //     toast.error("Failed to fetch balance");
+  //   }
+  // }, [account, address, selectedToken.address]);
+
+  // // Add useEffect to fetch balance when token changes or component mounts
+  // useEffect(() => {
+  //   fetchUserBalance();
+  //   console.log("user balance", userBalance);
+  // }, [fetchUserBalance, selectedToken]);
+
+  const calculateTotalAmount = () => {
+    return distributions
+      .reduce((sum, dist) => {
+        return sum + parseFloat(dist.amount);
+      }, 0)
+      .toString();
+  };
+
+  // Add function to check if user has sufficient balance
+  // const hasSufficientBalance = useCallback(() => {
+  //   try {
+  //     const baseAmount = calculateTotalAmount();
+  //     const baseAmountBigInt = BigInt(parseUnits(baseAmount, selectedToken.decimals));
+  //     const protocolFeeBigInt = (baseAmountBigInt * BigInt(protocolFeePercentage)) / BigInt(10000);
+  //     const totalAmountWithFee = baseAmountBigInt + protocolFeeBigInt;
+      
+  //     return userBalance >= totalAmountWithFee;
+  //   } catch (error) {
+  //     return false;
+  //   }
+  // }, [userBalance, calculateTotalAmount, selectedToken.decimals, protocolFeePercentage]);
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
@@ -150,14 +200,6 @@ export default function DistributePage() {
 
   const removeRow = (index: number) => {
     setDistributions(distributions.filter((_, i) => i !== index));
-  };
-
-  const calculateTotalAmount = () => {
-    return distributions
-      .reduce((sum, dist) => {
-        return sum + parseFloat(dist.amount);
-      }, 0)
-      .toString();
   };
 
   const handleDistribute = async (): Promise<void> => {
@@ -455,24 +497,64 @@ export default function DistributePage() {
 
         {/* Add Equal Amount Input when type is 'equal' */}
         {distributionType === "equal" && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Amount per Address</h2>
-            <input
-              type="text"
-              placeholder="Amount to distribute per address"
-              value={equalAmount}
-              onChange={(e) => {
-                setEqualAmount(e.target.value);
-                // Update all existing distributions with new amount
-                setDistributions((prev) =>
-                  prev.map((dist) => ({
-                    ...dist,
-                    amount: e.target.value,
-                  }))
-                );
-              }}
-              className="w-full bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
-            />
+          <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
+            <h2 className="text-xl font-semibold mb-4 text-white">Amount Distribution</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Lump Sum to Distribute</label>
+                <div className="flex gap-4">
+                  <input
+                    type="text"
+                    placeholder="Enter total amount to distribute"
+                    value={lumpSum}
+                    onChange={(e) => setLumpSum(e.target.value)}
+                    className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
+                  />
+                  <button
+                    onClick={() => {
+                      if (distributions.length === 0) {
+                        toast.error("Add some addresses first");
+                        return;
+                      }
+                      if (!lumpSum || isNaN(Number(lumpSum))) {
+                        toast.error("Please enter a valid lump sum amount");
+                        return;
+                      }
+                      const perAddressAmount = (Number(lumpSum) / distributions.length).toFixed(3);
+                      setEqualAmount(perAddressAmount);
+                      setDistributions(prev =>
+                        prev.map(dist => ({
+                          ...dist,
+                          amount: perAddressAmount
+                        }))
+                      );
+                      toast.success(`Calculated ${perAddressAmount} per address for ${distributions.length} addresses`);
+                    }}
+                    className="px-6 py-2 bg-gradient-to-r from-[#440495] to-[#B102CD] hover:from-[#B102CD] hover:to-[#440495] text-white font-bold rounded-lg transition-all"
+                  >
+                    Calculate
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Amount per Address</label>
+                <input
+                  type="text"
+                  placeholder="Amount to distribute per address"
+                  value={equalAmount}
+                  onChange={(e) => {
+                    setEqualAmount(e.target.value);
+                    setDistributions((prev) =>
+                      prev.map((dist) => ({
+                        ...dist,
+                        amount: e.target.value,
+                      }))
+                    );
+                  }}
+                  className="w-full bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
+                />
+              </div>
+            </div>
           </div>
         )}
 
