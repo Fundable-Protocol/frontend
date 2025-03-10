@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useAccount, useNetwork } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
-import { cairo, Call, constants } from "starknet";
+import { cairo, Call } from "starknet";
 import { validateDistribution } from "@/utils/validation";
 import { toast } from "react-hot-toast";
 import { parseUnits } from "ethers";

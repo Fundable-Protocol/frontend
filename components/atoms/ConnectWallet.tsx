@@ -10,11 +10,9 @@ import {
   braavos,
   useAccount,
   useConnect,
-  useNetwork,
   useDisconnect,
   useInjectedConnectors,
 } from "@starknet-react/core";
-import { constants } from "starknet";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import Dialog from "../molecules/Dialog";
