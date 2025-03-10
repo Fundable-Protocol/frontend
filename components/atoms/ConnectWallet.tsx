@@ -10,7 +10,6 @@ import {
   braavos,
   useAccount,
   useConnect,
-  useSwitchChain,
   useNetwork,
   useDisconnect,
   useInjectedConnectors,
@@ -35,11 +34,6 @@ const ConnectWallet: FC = () => {
     shimLegacyConnectors: ["braavos", "argent", "braavos-legacy", "metamask"],
   });
 
-  const { switchChain } = useSwitchChain({
-    params: {
-      chainId: constants.StarknetChainId.SN_MAIN,
-    },
-  });
 
   const { connectAsync } = useConnect();
   const { disconnect } = useDisconnect();

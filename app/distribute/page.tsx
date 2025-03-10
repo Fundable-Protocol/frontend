@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useAccount, useNetwork, useSwitchChain } from "@starknet-react/core";
+import { useAccount, useNetwork } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
 import { cairo, Call, constants } from "starknet";
@@ -73,11 +73,6 @@ export default function DistributePage() {
 
   const [protocolFeePercentage, setProtocolFeePercentage] = useState<number>(0);
   const { chain } = useNetwork();
-  const { switchChain } = useSwitchChain({
-    params: {
-      chainId: constants.StarknetChainId.SN_MAIN,
-    },
-  });
 
   // Add new state for amount input type
   const [amountInputType, setAmountInputType] = useState<"perAddress" | "lumpSum">("perAddress");
