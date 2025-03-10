@@ -10,9 +10,12 @@ import {
   braavos,
   useAccount,
   useConnect,
+  useSwitchChain,
+  useNetwork,
   useDisconnect,
   useInjectedConnectors,
 } from "@starknet-react/core";
+import { constants } from "starknet";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import Dialog from "../molecules/Dialog";
@@ -30,6 +33,12 @@ const ConnectWallet: FC = () => {
     order: "alphabetical", // stable order
     includeRecommended: "onlyIfNoConnectors",
     shimLegacyConnectors: ["braavos", "argent", "braavos-legacy", "metamask"],
+  });
+
+  const { switchChain } = useSwitchChain({
+    params: {
+      chainId: constants.StarknetChainId.SN_MAIN,
+    },
   });
 
   const { connectAsync } = useConnect();
