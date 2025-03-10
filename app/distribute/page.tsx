@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useAccount } from "@starknet-react/core";
+import { useAccount, useNetwork } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
 import { cairo, Call } from "starknet";
@@ -72,6 +72,7 @@ export default function DistributePage() {
   } | null>(null);
 
   const [protocolFeePercentage, setProtocolFeePercentage] = useState<number>(0);
+  const { chain } = useNetwork();
 
   // Add new state for amount input type
   const [amountInputType, setAmountInputType] = useState<"perAddress" | "lumpSum">("perAddress");
@@ -79,24 +80,44 @@ export default function DistributePage() {
   // Add new state for user's balance
   // const [userBalance, setUserBalance] = useState<bigint>(BigInt(0));
 
+  // Add new useEffect for chain checking
+  useEffect(() => {
+    if (!isMounted || !chain) return;
+    
+    if (chain.network !== "mainnet") {
+      toast.error(
+        "Please switch to Starknet Mainnet in your wallet to continue",
+        {
+          duration: Infinity,
+          icon: '🔄'
+        }
+      );
+      return; // Exit early if not on mainnet
+    }
+    
+    // Clear any existing "switch to mainnet" toasts when we're on mainnet
+    toast.dismiss();
+  }, [chain, isMounted]);
+
   useEffect(() => {
     const fetchProtocolFee = async () => {
-      if (!account) return;
+      if (!account || !isMounted) return;
+      if (chain.network !== "mainnet") return; // Exit if not on mainnet
 
       try {
-        const result = await account.callContract({
+        const response = await account.callContract({
           contractAddress: CONTRACT_ADDRESS,
           entrypoint: "get_protocol_fee_percent",
           calldata: [],
         });
-
-        if (result) {
-          // Convert hex string to decimal
-          const hexValue = result[0].toString();
-          const decimalValue = parseInt(hexValue, 16);
-          setProtocolFeePercentage(decimalValue);
-          console.log("protocol fee percentage", decimalValue);
-        }
+        
+        // Handle both array and object response formats
+        const result = Array.isArray(response) ? response : (response as { result: string[] }).result;
+        console.log("result", result);
+        
+        const resultValue = result[0];
+        const decimalValue = parseInt(resultValue, 16);
+        setProtocolFeePercentage(decimalValue);
       } catch (error) {
         console.error("Error fetching protocol fee:", error);
         toast.error("Failed to fetch protocol fee");
@@ -104,7 +125,7 @@ export default function DistributePage() {
     };
 
     fetchProtocolFee();
-  }, [account]);
+  }, [account, isMounted, chain]);
 
   // // Add function to fetch user's balance
   // const fetchUserBalance = useCallback(async () => {
@@ -671,3 +692,4 @@ export default function DistributePage() {
     </div>
   );
 }
+

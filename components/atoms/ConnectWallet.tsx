@@ -4,6 +4,7 @@
 import { FC, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 import {
   argent,
   braavos,
@@ -31,7 +32,8 @@ const ConnectWallet: FC = () => {
     shimLegacyConnectors: ["braavos", "argent", "braavos-legacy", "metamask"],
   });
 
-  const { connect } = useConnect();
+
+  const { connectAsync } = useConnect();
   const { disconnect } = useDisconnect();
 
   const showDialog = () => {
@@ -50,18 +52,31 @@ const ConnectWallet: FC = () => {
     router.replace(`?${params.toString()}`);
   };
 
-  const handleWalletConnect = (connector: (typeof connectors)[number]) => {
-    connect({ connector });
-    localStorage.setItem("starknetConnectorId", connector.id);
-    setHasPrevWallet(true);
-    hideDialog();
+  const handleWalletConnect = async (
+    connector: (typeof connectors)[number]
+  ) => {
+    try {
+      await connectAsync({ connector });
+      localStorage.setItem("starknetConnectorId", connector.id);
+      setHasPrevWallet(true);
+    } catch (err) {
+      const isConnectorErr = (err as Error)?.message === "Connector not found";
+
+      if (isConnectorErr) {
+        toast.error("Please install starknet wallet first.");
+      } else {
+        toast.error("Something went wrong. Please try again later.");
+      }
+    } finally {
+      hideDialog();
+    }
   };
 
   const disconnectWallet = () => {
     disconnect();
     setHasPrevWallet(false);
-    localStorage.removeItem("starknetConnectorId");
     setShowDisconnect(false);
+    localStorage.removeItem("starknetConnectorId");
   };
 
   const userAddress = address
@@ -120,7 +135,7 @@ const ConnectWallet: FC = () => {
             disabled
           >
             <Loader2 className="animate-spin" width={20} height={20} />
-            Please wait
+            Please wait...
           </Button>
         )}
 
