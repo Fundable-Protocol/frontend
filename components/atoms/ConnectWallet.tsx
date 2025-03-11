@@ -1,9 +1,10 @@
+// components/ConnectWallet.tsx
 "use client";
 
-import { FC, Suspense, useEffect, useState } from "react";
-
+import { FC, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
+import { toast } from "react-hot-toast";
 import {
   argent,
   braavos,
@@ -12,145 +13,174 @@ import {
   useDisconnect,
   useInjectedConnectors,
 } from "@starknet-react/core";
-
 import Image from "next/image";
 import { Button } from "../ui/button";
 import Dialog from "../molecules/Dialog";
+import { useIsMounted } from "@/lib/hooks/useIsMounted";
+import Link from "next/link";
 
 const ConnectWallet: FC = () => {
+  const { isMounted, hasPrevWallet, setHasPrevWallet } = useIsMounted();
   const router = useRouter();
-
-  const [isClient, setIsClient] = useState(false);
-  const [showDisconnect, SetshowDisconnect] = useState(false);
-
-  const { address, isConnected, connector: activeConnector } = useAccount();
+  const [showDisconnect, setShowDisconnect] = useState(false);
+  const { address, isConnected, status } = useAccount();
 
   const { connectors } = useInjectedConnectors({
     recommended: [argent(), braavos()],
+    order: "alphabetical", // stable order
     includeRecommended: "onlyIfNoConnectors",
-    order: "random",
+    shimLegacyConnectors: ["braavos", "argent", "braavos-legacy", "metamask"],
   });
 
-  const { connect } = useConnect();
+
+  const { connectAsync } = useConnect();
   const { disconnect } = useDisconnect();
-
-  useEffect(() => {
-    setIsClient(true);
-
-    const savedConnectorId = localStorage.getItem("walletConnectorId");
-
-    if (savedConnectorId && !isConnected) {
-      const connector = connectors.find((c) => c.id === savedConnectorId);
-
-      if (connector) connect({ connector });
-    }
-
-    if (isConnected && activeConnector && !savedConnectorId) {
-      localStorage.setItem("walletConnectorId", activeConnector.id);
-    }
-  }, [isConnected, isClient, activeConnector, connect, connectors]);
 
   const showDialog = () => {
     if (isConnected) {
-      SetshowDisconnect((prev) => !prev);
+      setShowDisconnect((prev) => !prev);
       return;
     }
-
     const params = new URLSearchParams(window.location.search);
     params.set("showDialog", "true");
-
     router.replace(`?${params.toString()}`);
   };
 
   const hideDialog = () => {
     const params = new URLSearchParams(window.location.search);
     params.delete("showDialog");
-
     router.replace(`?${params.toString()}`);
   };
 
-  const handleWalletConnect = (connector: (typeof connectors)[number]) => {
-    connect({ connector });
-    hideDialog();
+  const handleWalletConnect = async (
+    connector: (typeof connectors)[number]
+  ) => {
+    try {
+      await connectAsync({ connector });
+      localStorage.setItem("starknetConnectorId", connector.id);
+      setHasPrevWallet(true);
+    } catch (err) {
+      const isConnectorErr = (err as Error)?.message === "Connector not found";
+
+      if (isConnectorErr) {
+        toast.error("Please install starknet wallet first.");
+      } else {
+        toast.error("Something went wrong. Please try again later.");
+      }
+    } finally {
+      hideDialog();
+    }
   };
 
   const disconnectWallet = () => {
     disconnect();
-    localStorage.removeItem("walletConnectorId");
-    SetshowDisconnect(false);
+    setHasPrevWallet(false);
+    setShowDisconnect(false);
+    localStorage.removeItem("starknetConnectorId");
   };
 
-  const userAddress = `${address?.slice(0, 7)}...${address?.slice(-5)}`;
+  const userAddress = address
+    ? `${address.slice(0, 7)}...${address.slice(-5)}`
+    : "";
+
+  if (!isMounted) {
+    return (
+      <Button
+        variant="gradient"
+        size="lg"
+        className="p-4 flex gap-x-1"
+        disabled
+      >
+        <Loader2 className="animate-spin" width={20} height={20} />
+        Please wait
+      </Button>
+    );
+  }
 
   return (
     <>
       <div className="relative">
-        <Button
-          variant="default"
-          size="lg"
-          className=" p-4"
-          onClick={showDialog}
-        >
-          {address ? (
+        {!hasPrevWallet && status === "disconnected" ? (
+          <Button
+            variant="gradient"
+            size="lg"
+            className="p-4"
+            onClick={showDialog}
+          >
+            Connect Wallet
+          </Button>
+        ) : address ? (
+          <Button
+            variant="gradient"
+            size="lg"
+            className="p-4"
+            onClick={showDialog}
+          >
             <div className="flex items-center">
               <span className="mr-2">{userAddress}</span>
               <Image
-                src={`/svgs/carret_down.svg`}
+                src="/svgs/carret_down.svg"
                 width={32}
                 height={32}
                 alt="carret_down"
                 className="h-auto w-auto"
               />
             </div>
-          ) : (
-            "Connect Wallet"
-          )}
-        </Button>
-        {showDisconnect && (
+          </Button>
+        ) : (
           <Button
-            className="absolute top-12 right-0 p-4"
-            variant="outline"
+            variant="gradient"
             size="lg"
-            onClick={disconnectWallet}
+            className="p-4 flex gap-x-1"
+            disabled
           >
-            Disconnect wallet
+            <Loader2 className="animate-spin" width={20} height={20} />
+            Please wait...
           </Button>
         )}
+
+        {showDisconnect ? (
+          <Link href="/" onClick={disconnectWallet}>
+            <Button
+              className="absolute top-12 right-0 p-4"
+              variant="outline"
+              size="lg"
+            >
+              Disconnect wallet
+            </Button>
+          </Link>
+        ) : null}
       </div>
 
-      {isClient && (
-        <Suspense fallback={<div>Loading...</div>}>
-          <Dialog>
-            <div className="rounded-2xl bg-white py-6 text-center">
-              <h2 className="text-[#8B8E97] font-inter pb-3 text-lg font-medium">
-                Choose your preferred wallet
-              </h2>
-              <div className="bg-white flex flex-col px-4">
-                {connectors.map((cnt) => (
-                  <div
-                    key={cnt.id}
-                    className="flex items-center justify-between cursor-pointer hover:bg-slate-100 py-4 px-8 hover:rounded-lg"
-                    onClick={() => handleWalletConnect(cnt)}
-                    aria-label={cnt.name}
-                  >
-                    <span className="text-xl font-semibold capitalize">
-                      {cnt.name}
-                    </span>
-
-                    <Image
-                      src={typeof cnt.icon === 'string' ? cnt.icon : cnt.icon.light}
-                      width={400}
-                      height={400}
-                      alt={cnt.name}
-                      className="h-10 w-10"
-                    />
-                  </div>
-                ))}
+      <Dialog>
+        <div className="rounded-2xl bg-white py-6 text-center">
+          <h2 className="text-[#8B8E97] font-inter pb-3 text-lg font-medium">
+            Choose your preferred wallet
+          </h2>
+          <div className="bg-white flex flex-col px-4">
+            {connectors.map((cnt) => (
+              <div
+                key={cnt.id}
+                className="flex items-center justify-between cursor-pointer hover:bg-slate-100 py-4 px-8 hover:rounded-lg"
+                onClick={() => handleWalletConnect(cnt)}
+                aria-label={cnt.name}
+              >
+                <span className="text-xl font-semibold capitalize">
+                  {cnt.name}
+                </span>
+                <Image
+                  src={typeof cnt.icon === "string" ? cnt.icon : cnt.icon.light}
+                  width={40}
+                  height={40}
+                  alt={cnt.name}
+                  className="h-10 w-10"
+                  unoptimized
+                />
               </div>
-            </div>
-          </Dialog>
-        </Suspense>
-      )}
+            ))}
+          </div>
+        </div>
+      </Dialog>
     </>
   );
 };

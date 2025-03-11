@@ -5,7 +5,7 @@ interface ConfirmationModalProps {
   totalAmount: string;
   recipientCount: number;
   selectedToken: string;
-  protocolFee?: string;
+  protocolFeePercentage: number;
 }
 
 export function ConfirmationModal({
@@ -15,7 +15,7 @@ export function ConfirmationModal({
   totalAmount,
   recipientCount,
   selectedToken,
-  protocolFee,
+  protocolFeePercentage,
 }: ConfirmationModalProps) {
   if (!isOpen) return null;
 
@@ -26,7 +26,7 @@ export function ConfirmationModal({
         
         <div className="space-y-4 mb-6">
           <div className="bg-[#1a1a1a] p-4 rounded-lg">
-            <p className="text-[#DADADA] text-sm">Total Amount</p>
+            <p className="text-[#DADADA] text-sm">Total Amount + {protocolFeePercentage/100}% Fee</p>
             <p className="text-white font-semibold">{totalAmount} {selectedToken}</p>
           </div>
           
@@ -34,13 +34,6 @@ export function ConfirmationModal({
             <p className="text-[#DADADA] text-sm">Recipients</p>
             <p className="text-white font-semibold">{recipientCount} addresses</p>
           </div>
-
-          {protocolFee && (
-            <div className="bg-[#1a1a1a] p-4 rounded-lg">
-              <p className="text-[#DADADA] text-sm">Fee</p>
-              <p className="text-white font-semibold">{protocolFee} {selectedToken}</p>
-            </div>
-          )}
         </div>
 
         <div className="flex gap-4">

@@ -1,3 +1,5 @@
+import missingWalletImg from "../../../public/svgs/missingWallet.svg";
+
 import Image from "next/image";
 
 const TokenDistributionWallet = () => {
@@ -10,9 +12,10 @@ const TokenDistributionWallet = () => {
           </h1>
           <div className="p-8 rounded-lg bg-[#0d0019] bg-opacity-50 border border-[#5b21b6] border-opacity-20 flex flex-col items-center justify-center text-xl">
             <Image
-              src="/svgs/missingWallet.svg"
+              src={missingWalletImg}
               height={128}
               width={128}
+              priority
               alt="Wallet Required"
               className="h-auto w-auto"
             />

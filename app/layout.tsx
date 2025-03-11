@@ -7,6 +7,7 @@ import "./globals.css";
 import Navbar from "@/components/organisms/Navbar";
 import { Toaster } from "react-hot-toast";
 import { StarknetProvider } from "@/lib/providers/StarknetProvider";
+import ClientAutoConnect from "@/lib/providers/AutoConnectProvider";
 
 const geistSans = localFont({
   src: "../components/fonts/GeistVF.woff",
@@ -48,6 +49,7 @@ export default function RootLayout({
         <body
           className={`${bricolageGrotesque.variable} ${geistSans.variable} ${geistMono.variable} ${inter.className} bg-purple-50`}
         >
+          <ClientAutoConnect />
           <Navbar />
           {children}
           <SpeedInsights />

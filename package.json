@@ -6,11 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db-push": "npx prisma db push",
+    "db-studio": "npx prisma studio",
+    "generate-db": "npx prisma generate",
+    "migrate-schema": "npx prisma migrate dev --name"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.0",
     "@radix-ui/react-dialog": "^1.1.6",
+    "@prisma/client": "^6.4.1",
+    "@prisma/extension-accelerate": "^1.2.2",
     "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-select": "^2.1.6",
     "@radix-ui/react-slot": "^1.1.0",
@@ -46,6 +55,7 @@
     "eslint-config-next": "15.0.3",
     "https-browserify": "^1.0.0",
     "postcss": "^8",
+    "prisma": "^6.4.1",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "tailwindcss": "^3.4.1",
