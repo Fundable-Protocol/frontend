@@ -23,3 +23,12 @@ export const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
 };
 
 export const CONTRACT_ADDRESS = "0x288a25635f7c57607b4e017a3439f9018441945246fb5ca3424d8148dd580cc"; 
+
+// Function to get the explorer URL based on network and tx hash
+export const getExplorerUrl = (network: string, txHash: string): string => {
+  const baseUrl = network === 'MAINNET' 
+    ? 'https://voyager.online/tx/' 
+    : 'https://sepolia.voyager.online/tx/';
+  
+  return `${baseUrl}${txHash}`;
+};

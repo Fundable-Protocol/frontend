@@ -7,3 +7,43 @@ generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["prismaSchemaFolder"]
 }
+
+enum DistributionType {
+  EQUAL
+  WEIGHTED
+}
+
+enum DistributionStatus {
+  COMPLETED
+  FAILED
+  PENDING
+}
+
+enum Network {
+  MAINNET
+  TESTNET
+}
+
+model Distribution {
+  id                String             @id @default(uuid())
+  user_address      String
+  transaction_hash  String?            // Optional as it might be pending initially
+  token_address     String
+  token_symbol      String
+  token_decimals    Int
+  total_amount      Decimal            // Using Decimal for precise numeric values
+  fee_amount        Decimal
+  total_recipients  Int
+  distribution_type DistributionType
+  status           DistributionStatus  @default(PENDING)
+  block_number     BigInt?            // Optional as it might be pending initially
+  block_timestamp  DateTime?          // Optional as it might be pending initially
+  network          Network            @default(MAINNET)
+  created_at       DateTime           @default(now())
+  metadata         Json?              // Optional JSON field for additional data
+
+  @@index([user_address])
+  @@index([transaction_hash])
+  @@index([created_at])
+  @@index([status])
+}

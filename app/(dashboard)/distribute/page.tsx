@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useAccount, useNetwork } from "@starknet-react/core";
+import { useAccount, useNetwork, useConnect } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
 import { cairo, Call } from "starknet";
@@ -13,6 +13,8 @@ import TokenDistributionWallet from "@/components/ui/distribute/TokenDistributio
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { useIsMounted } from "@/lib/hooks/useIsMounted";
 import DistributeSkeleton from "@/components/ui/distribute/DistributeSkeleton";
+import CartridgeWalletInfo from "@/components/ui/distribute/CartridgeWalletInfo";
+import { useCartridge } from "@/lib/hooks/useCartridge";
 
 interface Distribution {
   address: string;
@@ -25,14 +27,37 @@ interface TokenOption {
   decimals: number;
 }
 
-const CONTRACT_ADDRESS =
-  "0x67a27274b63fa3b070cabf7adf59e7b1c1e5b768b18f84b50f6cb85f59c42e5";
+// Define contract addresses for different networks
+const TESTNET_CONTRACT_ADDRESS = "0x02495b0832001cde19e2bd3ec27beabe07b913000e155864a77b5e834ce60b6a";
+const MAINNET_CONTRACT_ADDRESS = "0x67a27274b63fa3b070cabf7adf59e7b1c1e5b768b18f84b50f6cb85f59c42e5";
 
-const SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
+// Define supported tokens for different networks
+const MAINNET_SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
   USDC: {
     symbol: "USDC",
     address:
       "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
+    decimals: 6,
+  },
+  ETH: {
+    symbol: "ETH",
+    address:
+      "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+    decimals: 18,
+  },
+  STRK: {
+    symbol: "STRK",
+    address:
+      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+    decimals: 18,
+  },
+};
+
+const TESTNET_SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
+  USDC: {
+    symbol: "USDC",
+    address:
+      "0x05be0e73ef0f477eb8d4fbea87802acbf55c266c2bab64aa93b2db573be15c41",
     decimals: 6,
   },
   ETH: {
@@ -55,6 +80,7 @@ type CSVRow = [string, string];
 export default function DistributePage() {
   const { isMounted, hasPrevWallet } = useIsMounted();
   const { address, status, account } = useAccount();
+  const { isCartridgeConnected } = useCartridge();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [distributionType, setDistributionType] = useState<
@@ -62,9 +88,7 @@ export default function DistributePage() {
   >("equal");
   const [equalAmount, setEqualAmount] = useState<string>("");
   const [lumpSum, setLumpSum] = useState<string>("");
-  const [selectedToken, setSelectedToken] = useState<TokenOption>(
-    SUPPORTED_TOKENS.STRK
-  );
+  const [selectedToken, setSelectedToken] = useState<TokenOption | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingDistribution, setPendingDistribution] = useState<{
     totalAmount: string;
@@ -72,37 +96,45 @@ export default function DistributePage() {
   } | null>(null);
 
   const [protocolFeePercentage, setProtocolFeePercentage] = useState<number>(0);
+  const [isMainnet, setIsMainnet] = useState<boolean>(true);
   const { chain } = useNetwork();
 
   // Add new state for amount input type
   const [amountInputType, setAmountInputType] = useState<"perAddress" | "lumpSum">("perAddress");
 
-  // Add new state for user's balance
-  // const [userBalance, setUserBalance] = useState<bigint>(BigInt(0));
+  // Derive current contract address and supported tokens based on network
+  const CONTRACT_ADDRESS = isMainnet ? MAINNET_CONTRACT_ADDRESS : TESTNET_CONTRACT_ADDRESS;
+  const SUPPORTED_TOKENS = isMainnet ? MAINNET_SUPPORTED_TOKENS : TESTNET_SUPPORTED_TOKENS;
+
+  // Initialize selected token after we know which network we're on
+  useEffect(() => {
+    if (SUPPORTED_TOKENS && !selectedToken) {
+      setSelectedToken(SUPPORTED_TOKENS.STRK);
+    }
+  }, [SUPPORTED_TOKENS, selectedToken]);
 
   // Add new useEffect for chain checking
   useEffect(() => {
     if (!isMounted || !chain) return;
     
     if (chain.network !== "mainnet") {
+      setIsMainnet(false);
       toast.error(
-        "Please switch to Starknet Mainnet in your wallet to continue",
+        "You are currently on Starknet Testnet. Switch to Starknet Mainnet to real-value distributions.",
         {
-          duration: Infinity,
+          duration: 5000,
           icon: '🔄'
         }
       );
-      return; // Exit early if not on mainnet
+    } else {
+      setIsMainnet(true);
+      toast.dismiss();
     }
-    
-    // Clear any existing "switch to mainnet" toasts when we're on mainnet
-    toast.dismiss();
   }, [chain, isMounted]);
 
   useEffect(() => {
     const fetchProtocolFee = async () => {
       if (!account || !isMounted) return;
-      if (chain.network !== "mainnet") return; // Exit if not on mainnet
 
       try {
         const response = await account.callContract({
@@ -125,36 +157,7 @@ export default function DistributePage() {
     };
 
     fetchProtocolFee();
-  }, [account, isMounted, chain]);
-
-  // // Add function to fetch user's balance
-  // const fetchUserBalance = useCallback(async () => {
-  //   if (!account || !address) return;
-
-  //   try {
-  //     const result = await account.callContract({
-  //       contractAddress: selectedToken.address,
-  //       entrypoint: "balanceOf",
-  //       calldata: [address],
-  //     });
-
-  //     if (result && result.length >= 2) {
-  //       const low = BigInt(result[0].toString());
-  //       const high = BigInt(result[1].toString());
-  //       const balance = (high << BigInt(128)) + low;
-  //       setUserBalance(balance);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching balance:", error);
-  //     toast.error("Failed to fetch balance");
-  //   }
-  // }, [account, address, selectedToken.address]);
-
-  // // Add useEffect to fetch balance when token changes or component mounts
-  // useEffect(() => {
-  //   fetchUserBalance();
-  //   console.log("user balance", userBalance);
-  // }, [fetchUserBalance, selectedToken]);
+  }, [account, isMounted, CONTRACT_ADDRESS]);
 
   const calculateTotalAmount = () => {
     return distributions
@@ -163,20 +166,6 @@ export default function DistributePage() {
       }, 0)
       .toString();
   };
-
-  // Add function to check if user has sufficient balance
-  // const hasSufficientBalance = useCallback(() => {
-  //   try {
-  //     const baseAmount = calculateTotalAmount();
-  //     const baseAmountBigInt = BigInt(parseUnits(baseAmount, selectedToken.decimals));
-  //     const protocolFeeBigInt = (baseAmountBigInt * BigInt(protocolFeePercentage)) / BigInt(10000);
-  //     const totalAmountWithFee = baseAmountBigInt + protocolFeeBigInt;
-      
-  //     return userBalance >= totalAmountWithFee;
-  //   } catch (error) {
-  //     return false;
-  //   }
-  // }, [userBalance, calculateTotalAmount, selectedToken.decimals, protocolFeePercentage]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -229,6 +218,11 @@ export default function DistributePage() {
   const handleDistribute = async (): Promise<void> => {
     if (status !== "connected" || !address || !account) {
       toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (!selectedToken) {
+      toast.error("No token selected");
       return;
     }
 
@@ -308,6 +302,10 @@ export default function DistributePage() {
     setIsLoading(true);
 
     try {
+      if (!selectedToken) {
+        throw new Error("No token selected");
+      }
+
       toast.loading("Processing distributions...", { duration: Infinity });
 
       const recipients = distributions.map((dist) => dist.address);
@@ -318,8 +316,9 @@ export default function DistributePage() {
       }
 
       if (distributionType === "equal") {
+        const token = selectedToken;
         const amounts = distributions.map((dist) =>
-          BigInt(parseUnits(dist.amount, selectedToken.decimals))
+          BigInt(parseUnits(dist.amount, token.decimals))
         );
         const totalAmount = amounts.reduce(
           (sum, amount) => sum + BigInt(amount),
@@ -345,7 +344,7 @@ export default function DistributePage() {
           const calls: Call[] = [
             {
               entrypoint: "approve",
-              contractAddress: selectedToken.address,
+              contractAddress: token.address,
               calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()],
             },
             {
@@ -356,7 +355,7 @@ export default function DistributePage() {
                 amountPerRecipient.high,
                 recipients.length.toString(),
                 ...recipients,
-                selectedToken.address,
+                token.address,
               ],
             },
           ];
@@ -372,8 +371,9 @@ export default function DistributePage() {
         }
       } else {
         console.log("Weighted distribution");
+        const token = selectedToken;
         const amounts = distributions.map((dist) =>
-          parseUnits(dist.amount, selectedToken.decimals)
+          parseUnits(dist.amount, token.decimals)
         );
         const totalAmount = amounts.reduce(
           (sum, amount) => sum + BigInt(amount),
@@ -396,7 +396,7 @@ export default function DistributePage() {
         const calls: Call[] = [
           {
             entrypoint: "approve",
-            contractAddress: selectedToken.address,
+            contractAddress: token.address,
             calldata: [CONTRACT_ADDRESS, low.toString(), high.toString()],
           },
           {
@@ -410,7 +410,7 @@ export default function DistributePage() {
               }),
               recipients.length.toString(),
               ...recipients,
-              selectedToken.address,
+              token.address,
             ],
           },
         ];
@@ -422,6 +422,39 @@ export default function DistributePage() {
       const receiptStatus = await account.waitForTransaction(tx);
 
       if (receiptStatus.statusReceipt === "success") {
+        // Create distribution record
+        try {
+          const baseAmount = calculateTotalAmount();
+          const protocolFee = (Number(baseAmount) * protocolFeePercentage) / 10000;
+          const token = selectedToken;
+          
+          await fetch('/api/distributions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_address: address,
+              transaction_hash: tx,
+              token_address: token.address,
+              token_symbol: token.symbol,
+              token_decimals: token.decimals,
+              total_amount: baseAmount,
+              fee_amount: protocolFee.toString(),
+              total_recipients: distributions.length,
+              distribution_type: distributionType.toUpperCase(),
+              network: isMainnet ? "MAINNET" : "TESTNET",
+              status: "COMPLETED",
+              metadata: {
+                recipients: distributions.map(d => ({ address: d.address, amount: d.amount }))
+              }
+            }),
+          });
+        } catch (error) {
+          console.error("Failed to save distribution record:", error);
+          // Don't throw here - we still want to show success for the actual distribution
+        }
+
         toast.dismiss();
         toast.success(
           `Successfully distributed tokens to ${recipients.length} addresses`,
@@ -452,12 +485,38 @@ export default function DistributePage() {
     return <TokenDistributionWallet />;
   }
 
+  if (!selectedToken) {
+    return <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#5b21b6] via-[#0d0019] to-[#0d0019]">
+      <div className="container mx-auto px-4 py-16">
+        <h1 className="text-5xl font-bric font-bold text-white mb-8">
+          Loading Token Information...
+        </h1>
+      </div>
+    </div>;
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#5b21b6] via-[#0d0019] to-[#0d0019]">
       <div className="container mx-auto px-4 py-16">
-        <h1 className="text-5xl font-bric font-bold text-white mb-8">
-          Token Distribution
-        </h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-5xl font-bric font-bold text-white">
+            Token Distribution
+          </h1>
+          
+          {/* Network Indicator */}
+          <div className={`px-4 py-2 rounded-full flex items-center gap-2 ${
+            isMainnet ? 'bg-green-700' : 'bg-yellow-600'
+          }`}>
+            <div className={`w-3 h-3 rounded-full animate-pulse ${
+              isMainnet ? 'bg-green-400' : 'bg-yellow-300'
+            }`}></div>
+            <span className="font-semibold text-white">
+              {isMainnet ? 'Mainnet' : 'Testnet'}
+            </span>
+          </div>
+        </div>
+
+        {isCartridgeConnected && <CartridgeWalletInfo />}
 
         {/* Token Selection Dropdown */}
         <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
@@ -465,8 +524,12 @@ export default function DistributePage() {
             Select Token
           </h2>
           <select
-            value={selectedToken.symbol}
-            onChange={(e) => setSelectedToken(SUPPORTED_TOKENS[e.target.value])}
+            value={selectedToken?.symbol || ''}
+            onChange={(e) => {
+              if (SUPPORTED_TOKENS[e.target.value]) {
+                setSelectedToken(SUPPORTED_TOKENS[e.target.value]);
+              }
+            }}
             className="w-full bg-[#1a1a1a] text-white border border-[#5b21b6] border-opacity-40 rounded-lg px-4 py-2 focus:outline-none focus:border-[#B102CD]"
           >
             {Object.values(SUPPORTED_TOKENS).map((token) => (
@@ -686,10 +749,9 @@ export default function DistributePage() {
         onConfirm={handleConfirmDistribution}
         totalAmount={pendingDistribution?.totalAmount || "0"}
         recipientCount={pendingDistribution?.recipientCount || 0}
-        selectedToken={selectedToken.symbol}
+        selectedToken={selectedToken?.symbol || ""}
         protocolFeePercentage={protocolFeePercentage}
       />
     </div>
   );
-}
-
+} 
