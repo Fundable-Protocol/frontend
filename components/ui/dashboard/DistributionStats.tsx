@@ -1,6 +1,127 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAccount } from "@starknet-react/core";
+import { Loader2 } from "lucide-react";
+
+interface DistributionStatistics {
+  total: number;
+  completed: number;
+  failed: number;
+  pending: number;
+  totalAmountByToken?: Record<string, { amount: number, count: number }>;
+  averageByToken?: Record<string, number>;
+  totalRecipients?: number;
+}
 
 export function DistributionStats() {
+  const [stats, setStats] = useState<DistributionStatistics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { address } = useAccount();
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!address) {
+        setLoading(false);
+        setStats(null);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/distributions/stats?user_address=${address}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch distribution statistics');
+        }
+        
+        const data = await response.json();
+        setStats(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching distribution stats:', err);
+        setError('Failed to load statistics');
+        setStats(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [address]);
+
+  // Helper to format token amounts
+  const formatAmount = (amount: number): string => {
+    return amount.toLocaleString(undefined, { 
+      maximumFractionDigits: 2 
+    });
+  };
+
+  // Get primary token symbol (most used token)
+  const getPrimaryToken = (): string => {
+    if (!stats?.totalAmountByToken) return "STRK";
+    
+    let primaryToken = "STRK";
+    let maxAmount = 0;
+    
+    Object.entries(stats.totalAmountByToken).forEach(([token, data]) => {
+      if (data.amount > maxAmount) {
+        maxAmount = data.amount;
+        primaryToken = token;
+      }
+    });
+    
+    return primaryToken;
+  };
+
+  // Get total distributed amount for primary token
+  const getTotalAmount = (): string => {
+    if (!stats?.totalAmountByToken) return "0";
+    const primaryToken = getPrimaryToken();
+    return stats.totalAmountByToken[primaryToken]?.amount 
+      ? formatAmount(stats.totalAmountByToken[primaryToken].amount) 
+      : "0";
+  };
+
+  // Get average amount per distribution for primary token
+  const getAverageAmount = (): string => {
+    if (!stats?.averageByToken) return "0";
+    const primaryToken = getPrimaryToken();
+    return stats.averageByToken[primaryToken] 
+      ? formatAmount(stats.averageByToken[primaryToken]) 
+      : "0";
+  };
+
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="bg-[#1a1a1a] border-[#5b21b6] border-opacity-20">
+            <CardContent className="p-6 flex justify-center items-center">
+              <Loader2 className="h-8 w-8 animate-spin text-[#5b21b6]" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="bg-[#1a1a1a] border-[#5b21b6] border-opacity-20">
+            <CardContent className="p-6">
+              <div className="text-white text-center">{error || "Connect wallet to view stats"}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  const primaryToken = getPrimaryToken();
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card className="bg-[#1a1a1a] border-[#5b21b6] border-opacity-20">
@@ -22,8 +143,10 @@ export function DistributionStats() {
           </svg>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-white">24</div>
-          <p className="text-xs text-[#DADADA]">+4 from last month</p>
+          <div className="text-2xl font-bold text-white">{stats.total}</div>
+          <p className="text-xs text-[#DADADA]">
+            {stats.completed} completed, {stats.pending} pending
+          </p>
         </CardContent>
       </Card>
 
@@ -48,8 +171,10 @@ export function DistributionStats() {
           </svg>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-white">5,678 STRK</div>
-          <p className="text-xs text-[#DADADA]">+890 STRK from last month</p>
+          <div className="text-2xl font-bold text-white">{getTotalAmount()} {primaryToken}</div>
+          <p className="text-xs text-[#DADADA]">
+            {stats.completed} completed distributions
+          </p>
         </CardContent>
       </Card>
 
@@ -72,8 +197,10 @@ export function DistributionStats() {
           </svg>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-white">156</div>
-          <p className="text-xs text-[#DADADA]">+23 since last month</p>
+          <div className="text-2xl font-bold text-white">{stats.totalRecipients || 0}</div>
+          <p className="text-xs text-[#DADADA]">
+            From {stats.completed} completed distributions
+          </p>
         </CardContent>
       </Card>
 
@@ -96,8 +223,10 @@ export function DistributionStats() {
           </svg>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-white">36.4 STRK</div>
-          <p className="text-xs text-[#DADADA]">+2.8 STRK per distribution</p>
+          <div className="text-2xl font-bold text-white">{getAverageAmount()} {primaryToken}</div>
+          <p className="text-xs text-[#DADADA]">
+            Per distribution
+          </p>
         </CardContent>
       </Card>
     </div>

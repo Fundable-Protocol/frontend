@@ -22,11 +22,11 @@ export default function DashboardPage() {
       
       <Tabs defaultValue="streams" className="space-y-4">
         <TabsList className="bg-[#1a1a1a]">
-          <TabsTrigger value="streams" className="text-white data-[state=active]:bg-[#5b21b6]">
-            Streams
-          </TabsTrigger>
           <TabsTrigger value="distributions" className="text-white data-[state=active]:bg-[#5b21b6]">
             Distributions
+          </TabsTrigger>
+          <TabsTrigger value="streams" className="text-white data-[state=active]:bg-[#5b21b6]">
+            Streams
           </TabsTrigger>
         </TabsList>
 
