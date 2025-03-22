@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Wallet, LayoutDashboard, Banknote, FileText } from "lucide-react";
+import { Wallet, LayoutDashboard, /*Banknote,*/ FileText } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -15,12 +15,12 @@ export function Sidebar() {
       href: "/dashboard",
       active: pathname === "/dashboard",
     },
-    {
-      label: "Stream Tokens",
-      icon: <Banknote className="h-5 w-5" />,
-      href: "/stream",
-      active: pathname.startsWith("/stream"),
-    },
+    // {
+    //   label: "Stream Tokens",
+    //   icon: <Banknote className="h-5 w-5" />,
+    //   href: "/stream",
+    //   active: pathname.startsWith("/stream"),
+    // },
     {
       label: "Distribute",
       icon: <Wallet className="w-4 h-4" />,

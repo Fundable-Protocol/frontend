@@ -30,5 +30,5 @@ export const useAutoConnect = () => {
         saveWalletAction({ walletAddress: address });
       }
     }
-  }, [address, status, connectors, connect]);
+  }, [address, status, connectors, connect, hasPrevWallet]);
 };

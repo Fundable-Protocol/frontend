@@ -1,22 +1,26 @@
 import missingWalletImg from "../../../public/svgs/missingWallet.svg";
 import Image from "next/image";
 import { useConnect } from "@starknet-react/core";
-import { Button } from "../button";
+// import { Button } from "../button";
 import ControllerConnector from "@cartridge/connector/controller";
 
 const TokenDistributionWallet = () => {
-  const { connect, connectors } = useConnect();
+  const { connectors } = useConnect();
   
   // Find the Cartridge connector
   const cartridgeConnector = connectors.find(
     (c) => c.id === "cartridge.controller"
   ) as ControllerConnector;
 
-  const handleConnectCartridge = async () => {
-    if (cartridgeConnector) {
-      await connect({ connector: cartridgeConnector });
-    }
-  };
+  if (!cartridgeConnector) {
+    console.log("No cartridge connector found");
+  }
+
+  // const handleConnectCartridge = async () => {
+  //   if (cartridgeConnector) {
+  //     await connect({ connector: cartridgeConnector });
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#5b21b6] via-[#0d0019] to-[#0d0019]">

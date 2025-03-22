@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       const tokenTotals: Record<string, { amount: number, count: number }> = {};
       
       completedDistributions.forEach(dist => {
-        const amount = parseFloat(dist.total_amount);
+        const amount = parseFloat(dist.total_amount.toString());
         if (!tokenTotals[dist.token_symbol]) {
           tokenTotals[dist.token_symbol] = { amount: 0, count: 0 };
         }

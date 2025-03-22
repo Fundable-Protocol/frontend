@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+// import { useParams } from "next/navigation";
 import { FormDisplay } from "@/components/organisms/FormDisplay";
 
 // This is a mock form definition - in a real app, you would fetch this from your backend
@@ -37,11 +37,11 @@ const mockFormDefinition = {
 };
 
 export default function FormPage() {
-  const params = useParams();
-  const formId = params.formId as string;
+  // const params = useParams();
+  // const formId = params.formId as string;
 
-  // In a real app, you would fetch the form definition based on the formId
-  const handleSubmit = (data: any) => {
+  
+  const handleSubmit = (data: Record<string, unknown>) => {
     console.log("Form submitted:", data);
     // Here you would typically send the data to your backend
   };

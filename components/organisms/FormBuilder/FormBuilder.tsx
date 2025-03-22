@@ -57,9 +57,9 @@ export function FormBuilder() {
     console.log(data);
     // Here you would typically save the form definition
   };
-
   const addField = () => {
     append({
+      id: crypto.randomUUID(), // Add unique id
       name: "",
       label: "",
       type: "text",
@@ -127,7 +127,7 @@ export function FormBuilder() {
                   <div>
                     <label className="block text-sm font-medium mb-1">Field Type</label>
                     <Select
-                      onValueChange={(value) => form.setValue(`fields.${index}.type`, value as any)}
+                      onValueChange={(value) => form.setValue(`fields.${index}.type`, value as "text" | "email" | "number" | "textarea" | "select")}
                       defaultValue={field.type}
                     >
                       <SelectTrigger>

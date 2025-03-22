@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useAccount, useNetwork, useConnect } from "@starknet-react/core";
+import { useAccount, useNetwork } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
 import { cairo, Call } from "starknet";

@@ -37,7 +37,7 @@ interface DistributionData {
   block_timestamp?: Date | null;
   network: 'MAINNET' | 'TESTNET';
   created_at: Date;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, string> | null;
 }
 
 interface DistributionResponse {

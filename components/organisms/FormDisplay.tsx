@@ -24,40 +24,42 @@ interface FormDefinition {
 
 interface FormDisplayProps {
   formDefinition: FormDefinition;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Record<string, unknown>) => void;
 }
 
 export function FormDisplay({ formDefinition, onSubmit }: FormDisplayProps) {
   // Dynamically create a Zod schema based on the form definition
   const generateSchema = () => {
-    const schemaFields: Record<string, any> = {};
+    const schemaFields: Record<string, z.ZodTypeAny> = {};
     
     formDefinition.fields.forEach((field) => {
-      let fieldSchema = z.string();
-      
-      if (field.required) {
-        fieldSchema = fieldSchema.min(1, `${field.label} is required`);
-      } else {
-        fieldSchema = fieldSchema.optional();
-      }
-
       if (field.type === "email") {
-        fieldSchema = z.string().email("Invalid email address");
         if (field.required) {
-          fieldSchema = fieldSchema.min(1, `${field.label} is required`);
+          schemaFields[field.name] = z.string()
+            .min(1, `${field.label} is required`)
+            .email("Invalid email address");
         } else {
-          fieldSchema = fieldSchema.optional();
+          schemaFields[field.name] = z.string()
+            .email("Invalid email address")
+            .optional();
         }
       } else if (field.type === "number") {
-        fieldSchema = z.string().transform((val) => Number(val));
         if (field.required) {
-          fieldSchema = fieldSchema.min(1, `${field.label} is required`);
+          schemaFields[field.name] = z.coerce.number({
+            required_error: `${field.label} is required`,
+            invalid_type_error: `${field.label} must be a number`
+          });
         } else {
-          fieldSchema = fieldSchema.optional();
+          schemaFields[field.name] = z.coerce.number().optional();
+        }
+      } else {
+        if (field.required) {
+          schemaFields[field.name] = z.string()
+            .min(1, `${field.label} is required`);
+        } else {
+          schemaFields[field.name] = z.string().optional();
         }
       }
-
-      schemaFields[field.name] = fieldSchema;
     });
 
     return z.object(schemaFields);
@@ -67,7 +69,7 @@ export function FormDisplay({ formDefinition, onSubmit }: FormDisplayProps) {
     resolver: zodResolver(generateSchema()),
   });
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = (data: Record<string, unknown>) => {
     onSubmit(data);
   };
 

@@ -11,7 +11,7 @@ export interface CreateDistributionInput {
   total_recipients: number;
   distribution_type: DistributionType;
   network: Network;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string>;
 }
 
 export interface UpdateDistributionInput {
