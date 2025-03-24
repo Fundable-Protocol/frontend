@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Wallet, LayoutDashboard, /*Banknote,*/ FileText } from "lucide-react";
+import { Wallet, LayoutDashboard, /*Banknote, FileText */} from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -27,12 +27,12 @@ export function Sidebar() {
       href: "/distribute",
       active: pathname.startsWith("/distribute"),
     },
-    {
-      label: "Create Form",
-      icon: <FileText className="h-5 w-5" />,
-      href: "/create-form",
-      active: pathname.startsWith("/create-form"),
-    },
+    // {
+    //   label: "Create Form",
+    //   icon: <FileText className="h-5 w-5" />,
+    //   href: "/create-form",
+    //   active: pathname.startsWith("/create-form"),
+    // },
   ];
 
   return (

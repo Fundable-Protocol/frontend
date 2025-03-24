@@ -20,7 +20,7 @@ const ConnectWalletButton: FC<ButtonProps> = ({ className }) => {
     <>
       {isRootPath ? (
         <Link href="/dashboard">
-          <Button variant="default" className={className}>
+          <Button variant="gradient" className={className}>
             Launch App
           </Button>
         </Link>
