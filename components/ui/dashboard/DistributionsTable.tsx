@@ -17,41 +17,33 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getExplorerUrl } from "@/lib/constants";
+import Logo from "@/public/imgs/fundable_logo.png";
 import { formatDistanceToNow } from "date-fns";
 import { useAccount } from "@starknet-react/core";
 import { Loader2, ExternalLink } from "lucide-react";
+import { DistributionDetailsModal } from "./DistributionDetailsModal";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Distribution, RecipientData, DistributionResponse } from "@/lib/types";
 
-interface DistributionData {
-  id: string;
-  user_address: string;
-  transaction_hash?: string | null;
-  token_address: string;
-  token_symbol: string;
-  token_decimals: number;
-  total_amount: string;
-  fee_amount: string;
-  total_recipients: number;
-  distribution_type: 'EQUAL' | 'WEIGHTED';
-  status: 'COMPLETED' | 'FAILED' | 'PENDING';
-  block_number?: bigint | null;
-  block_timestamp?: Date | null;
-  network: 'MAINNET' | 'TESTNET';
-  created_at: Date;
-  metadata?: Record<string, string> | null;
-}
-
-interface DistributionResponse {
-  distributions: DistributionData[];
-  total: number;
+declare module "jspdf" {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    previousAutoTable: {
+      finalY: number;
+    };
+  }
 }
 
 export function DistributionsTable() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [distributions, setDistributions] = useState<DistributionData[]>([]);
+  const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'EQUAL' | 'WEIGHTED'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'FAILED' | 'PENDING'>('ALL');
+  const [selectedDistribution, setSelectedDistribution] = useState<Distribution | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   
   // Get the connected wallet address
   const { address } = useAccount();
@@ -113,6 +105,123 @@ export function DistributionsTable() {
       default:
         return 'bg-gray-500';
     }
+  };
+
+
+  const handleExportCSV = async (distribution: Distribution) => {
+    if (!distribution.metadata) {
+      console.error('No metadata found for distribution');
+      return;
+    }
+    
+    const recipients: RecipientData[] = distribution.metadata.recipients || [];
+    
+    // Create CSV content
+    const csvContent = [
+      ['Distribution Details'],
+      ['ID', distribution.id],
+      ['Status', distribution.status],
+      ['Network', distribution.network],
+      ['Type', distribution.distribution_type],
+      ['Total Recipients', distribution.total_recipients.toString()],
+      ['Total Amount', `${distribution.total_amount} ${distribution.token_symbol}`],
+      ['Fee Amount', `${distribution.fee_amount} ${distribution.token_symbol}`],
+      ['Created At', new Date(distribution.created_at).toLocaleString()],
+      ['Transaction Hash', distribution.transaction_hash || 'N/A'],
+      [],
+      ['Recipients'],
+      ['Address', 'Amount'],
+      ...recipients.map(recipient => [recipient.address, recipient.amount])
+    ]
+      .map(row => row.join(','))
+      .join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `distribution_${distribution.id}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handleExportPDF = async (distribution: Distribution) => {
+    const recipients: RecipientData[] = distribution.metadata?.recipients || [];
+    
+    const doc = new jsPDF();
+    
+    // Add logo
+    doc.addImage(Logo.src, 'PNG', (doc.internal.pageSize.width - 40) / 2, 10, 40, 20);
+    
+    // Add title - positioned below logo
+    doc.setFontSize(20);
+    doc.setTextColor(91, 33, 182);
+    doc.text('Distribution Details', 14, 45);
+    
+    // Add distribution details
+    const details = [
+      ['Network:', distribution.network],
+      ['Type:', distribution.distribution_type],
+      ['Total Recipients:', distribution.total_recipients.toString()],
+      ['Total Amount:', `${distribution.total_amount} ${distribution.token_symbol}`],
+      ['Fee Amount:', `${distribution.fee_amount} ${distribution.token_symbol}`],
+      ['Created At:', new Date(distribution.created_at).toLocaleString()],
+      ['Transaction Hash:', distribution.transaction_hash || 'N/A']
+    ];
+    
+    autoTable(doc, {
+      startY: 55,
+      body: details,
+      theme: 'plain',
+      styles: {
+        fontSize: 10,
+        textColor: [0, 0, 0],
+        cellPadding: 4
+      },
+      columnStyles: { 
+        0: { 
+          cellWidth: 40, 
+          fontStyle: 'bold',
+          textColor: [91, 33, 182]
+        }
+      }
+    });
+    
+    // Add recipients table
+    doc.setFontSize(16);
+    doc.setTextColor(91, 33, 182);
+    const finalY = (doc as any).lastAutoTable.finalY || 55;
+    doc.text('Recipients', 14, finalY + 15);
+    
+    autoTable(doc, {
+      startY: finalY + 20,
+      head: [['Address', 'Amount']],
+      body: recipients.map(recipient => [
+        recipient.address,
+        `${recipient.amount} ${distribution.token_symbol}`
+      ]),
+      theme: 'grid',
+      headStyles: { 
+        fillColor: [91, 33, 182],
+        fontSize: 12,
+        fontStyle: 'bold',
+        halign: 'left'
+      },
+      styles: { 
+        fontSize: 9,
+        cellPadding: 5,
+        halign: 'left'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 255]
+      }
+    });
+    
+    doc.save(`distribution_${distribution.id}.pdf`);
   };
 
   return (
@@ -264,11 +373,26 @@ export function DistributionsTable() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="bg-[#1a1a1a] text-white border-[#5b21b6]">
-                        <DropdownMenuItem className="hover:bg-[#5b21b6] cursor-pointer">
+                        <DropdownMenuItem 
+                          className="hover:bg-[#5b21b6] cursor-pointer"
+                          onClick={() => {
+                            setSelectedDistribution(distribution);
+                            setIsDetailsModalOpen(true);
+                          }}
+                        >
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="hover:bg-[#5b21b6] cursor-pointer">
-                          Export CSV
+                        <DropdownMenuItem 
+                          className="hover:bg-[#5b21b6] cursor-pointer"
+                          onClick={() => handleExportCSV(distribution)}
+                        >
+                          Export as CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="hover:bg-[#5b21b6] cursor-pointer"
+                          onClick={() => handleExportPDF(distribution)}
+                        >
+                          Export as PDF
                         </DropdownMenuItem>
                         {distribution.transaction_hash && (
                           <DropdownMenuItem 
@@ -291,6 +415,15 @@ export function DistributionsTable() {
           </Table>
         </div>
       )}
+
+      <DistributionDetailsModal
+        distribution={selectedDistribution}
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedDistribution(null);
+        }}
+      />
     </div>
   );
 } 
