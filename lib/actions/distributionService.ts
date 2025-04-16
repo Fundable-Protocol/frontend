@@ -128,4 +128,32 @@ export class DistributionService {
       pending,
     };
   }
+
+  static async getDistributionRecipients(distributionId: string) {
+    try {
+      const distribution = await prismaClient.distribution.findUnique({
+        where: { id: distributionId },
+        include: {
+          recipients: {
+            select: {
+              address: true,
+              amount: true
+            }
+          }
+        }
+      });
+
+      if (!distribution) {
+        throw new Error('Distribution not found');
+      }
+
+      return distribution.recipients.map(recipient => ({
+        address: recipient.address,
+        amount: recipient.amount.toString()
+      }));
+    } catch (error) {
+      console.error('Error fetching distribution recipients:', error);
+      throw error;
+    }
+  }
 } 

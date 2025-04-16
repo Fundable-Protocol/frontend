@@ -47,11 +47,13 @@ export default function RootLayout({
     <html lang="en">
       <StarknetProvider>
         <body
-          className={`${bricolageGrotesque.variable} ${geistSans.variable} ${geistMono.variable} ${inter.className} bg-purple-50`}
+          className={`${bricolageGrotesque.variable} ${geistSans.variable} ${geistMono.variable} ${inter.className} bg-purple-50 min-h-screen overflow-x-hidden`}
         >
           <ClientAutoConnect />
           <Navbar />
-          {children}
+          <div className="flex flex-col min-h-screen">
+            {children}
+          </div>
           <SpeedInsights />
           <Toaster position="bottom-right" />
         </body>

@@ -11,54 +11,56 @@ const Hero = () => {
     text: "One stop solution for subscriptions, giveaways, salaries, SIPs and more automated payments in web3.",
   };
   return (
-    <header className="w-full bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#5b21b6] via-[#0d0019] to-[#0d0019] rounded-xl px-8 xl:px-0">
-      <div className="flex justify-center items-center py-24 xl:pb-0 flex-col text-balance">
-        <div className="md:max-w-4xl text-center space-y-4">
-          <h1 className="text-white text-5xl md:text-[5rem] md:leading-[6rem] font-bric font-bold">
+    <header className="w-full bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-[#5b21b6] via-[#0d0019] to-[#0d0019] rounded-xl px-4 sm:px-6 md:px-8 xl:px-12 overflow-hidden">
+      <div className="flex justify-center items-center py-12 sm:py-16 md:py-20 lg:py-24 xl:pb-0 flex-col text-balance">
+        <div className="w-full max-w-screen-lg text-center space-y-4">
+          <h1 className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-[5rem] lg:leading-[6rem] font-bric font-bold">
             {heroText.h1Label}
           </h1>
 
-          <div className="space-y-6">
-            <p className="text-[#DADADA] max-w-xl md:max-w-[85%] mx-auto md:text-2xl">
+          <div className="space-y-4 sm:space-y-6">
+            <p className="text-[#DADADA] text-base sm:text-lg md:text-xl lg:text-2xl max-w-xl md:max-w-[85%] mx-auto">
               {heroText.text}
             </p>
-            <div className="flex justify-center gap-x-4">
+            <div className="flex flex-col sm:flex-row justify-center gap-y-3 sm:gap-y-0 sm:gap-x-4">
               <Link href="/distribute">
-                <Button>Get Started</Button>
+                <Button className="w-full sm:w-auto">Get Started</Button>
               </Link>
-              <Button variant="secondary">Learn More</Button>
+              <Button variant="secondary" className="w-full sm:w-auto">Learn More</Button>
             </div>
           </div>
         </div>
 
-        <div className="relative m-10 md:mt-20 xs:mb-0">
+        <div className="relative mt-8 sm:mt-10 md:mt-16 lg:mt-20 w-full flex justify-center">
+          {/* Large screens */}
           <Image
             src={walletsImg}
             width={850}
             height={74}
             alt="hero-card"
             priority
-            className="hidden md:block h-auto w-auto"
+            className="hidden md:block h-auto max-w-full"
           />
+          {/* Small screens */}
           <Image
             src={walletsImg}
-            width={50}
+            width={350}
             height={50}
             alt="hero-card"
             priority
-            className="block max-w-xs md:hidden h-auto w-auto"
+            className="block md:hidden h-auto max-w-full px-4"
           />
         </div>
       </div>
 
-      <div className="relative aspect-[3/1] hidden xl:block">
+      <div className="relative mt-10 sm:mt-16 aspect-[3/1] hidden lg:block">
         <Image
           src={laptopPhoneImage}
           priority
           fill
           alt="hero-laptop-phone"
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-contain translate-y-52"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
+          className="object-contain translate-y-1/3 md:translate-y-1/4 lg:translate-y-1/5 xl:translate-y-52"
         />
       </div>
     </header>

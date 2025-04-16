@@ -5,7 +5,7 @@ import Section3 from "@/components/ui/landing-page/section-3";
 
 export default async function Home() {
   return (
-    <main className="space-y-20 md:space-y-52 md:pb-20 container">
+    <main className="space-y-12 sm:space-y-16 md:space-y-24 lg:space-y-32 xl:space-y-52 px-4 sm:px-6 md:px-8 lg:container pb-12 md:pb-20">
       <Hero />
       <Section2 />
       <Section3 />
