@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Stream } from "@/types/stream";
+import { Stream } from "@/lib/types/stream";
 
 interface StreamCardProps {
   stream: Stream;

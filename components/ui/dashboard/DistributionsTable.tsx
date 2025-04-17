@@ -23,12 +23,15 @@ import { useAccount } from "@starknet-react/core";
 import { Loader2, ExternalLink } from "lucide-react";
 import { DistributionDetailsModal } from "./DistributionDetailsModal";
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import { Distribution, RecipientData, DistributionResponse } from "@/lib/types";
+import autoTable, { UserOptions } from "jspdf-autotable";
+import { Distribution, RecipientData, DistributionResponse } from "@/lib/types/distribution";
 
 declare module "jspdf" {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
+    autoTable: (options: UserOptions) => jsPDF;
+    lastAutoTable: {
+      finalY: number;
+    };
     previousAutoTable: {
       finalY: number;
     };
@@ -157,10 +160,10 @@ export function DistributionsTable() {
     // Add logo
     doc.addImage(Logo.src, 'PNG', (doc.internal.pageSize.width - 40) / 2, 10, 40, 20);
     
-    // Add title - positioned below logo
+    // Add title
     doc.setFontSize(20);
     doc.setTextColor(91, 33, 182);
-    doc.text('Distribution Details', 14, 45);
+    doc.text('Distribution Details', 14, 50);
     
     // Add distribution details
     const details = [
@@ -194,7 +197,7 @@ export function DistributionsTable() {
     // Add recipients table
     doc.setFontSize(16);
     doc.setTextColor(91, 33, 182);
-    const finalY = (doc as any).lastAutoTable.finalY || 55;
+    const finalY = doc.lastAutoTable.finalY || 55;
     doc.text('Recipients', 14, finalY + 15);
     
     autoTable(doc, {

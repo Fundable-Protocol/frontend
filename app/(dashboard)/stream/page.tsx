@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAccount } from "@starknet-react/core";
 import { toast } from "react-hot-toast";
-import { Stream } from "@/types/stream";
+import { Stream } from "@/lib/types/stream";
 import TokenStreamingWallet from "@/components/ui/stream/TokenStreamingWallet";
 import { StreamConfirmationModal } from "@/components/ui/stream/StreamConfirmationModal";
 import { StreamCard } from "@/components/ui/stream/StreamCard";

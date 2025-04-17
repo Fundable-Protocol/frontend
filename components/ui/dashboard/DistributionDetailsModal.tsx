@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { formatDistanceToNow } from "date-fns";
-import { Distribution } from "@/lib/types";
+import { Distribution } from "@/lib/types/distribution";
 
 interface DistributionDetailsModalProps {
   distribution: Distribution | null;
