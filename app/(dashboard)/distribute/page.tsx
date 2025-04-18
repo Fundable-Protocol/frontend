@@ -232,6 +232,32 @@ export default function DistributePage() {
         return;
       }
 
+      // Check for duplicate addresses
+      const addressCounts = distributions.reduce((acc, dist) => {
+        acc[dist.address] = (acc[dist.address] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const duplicateAddresses = Object.entries(addressCounts)
+        .filter(([_, count]) => count > 1)
+        .map(([address]) => address);
+
+      if (duplicateAddresses.length > 0) {
+        toast.error(
+          <div>
+            Duplicate addresses found:
+            <ul className="list-disc pl-4 mt-2">
+              {duplicateAddresses.map((addr, i) => (
+                <li key={i} className="text-sm">
+                  {addr}
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+        return;
+      }
+
       // Validation based on distribution type
       if (distributionType === "equal") {
         const firstAmount = distributions[0].amount;
