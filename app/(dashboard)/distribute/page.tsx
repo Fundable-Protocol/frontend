@@ -239,6 +239,7 @@ export default function DistributePage() {
       }, {} as Record<string, number>);
 
       const duplicateAddresses = Object.entries(addressCounts)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .filter(([_, count]) => count > 1)
         .map(([address]) => address);
 
