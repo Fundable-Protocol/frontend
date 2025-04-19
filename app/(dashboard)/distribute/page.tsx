@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useAccount, useNetwork } from "@starknet-react/core";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
@@ -15,10 +15,15 @@ import { useIsMounted } from "@/lib/hooks/useIsMounted";
 import DistributeSkeleton from "@/components/ui/distribute/DistributeSkeleton";
 import CartridgeWalletInfo from "@/components/ui/distribute/CartridgeWalletInfo";
 import { useCartridge } from "@/lib/hooks/useCartridge";
+import { useSearchParams } from "next/navigation";
 
 interface Distribution {
   address: string;
   amount: string;
+}
+
+interface RecipientData extends Distribution {
+  label?: string;
 }
 
 interface TokenOption {
@@ -51,6 +56,12 @@ const MAINNET_SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
       "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
     decimals: 18,
   },
+  USDT: {
+    symbol: "USDT",
+    address:
+      "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8",
+    decimals: 6,
+  },
 };
 
 const TESTNET_SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
@@ -74,14 +85,21 @@ const TESTNET_SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
   },
 };
 
-// Add proper type for CSV parsing result
-type CSVRow = [string, string];
-
 export default function DistributePage() {
+  return (
+    <Suspense fallback={<DistributeSkeleton />}>
+      <DistributePageContent />
+    </Suspense>
+  );
+}
+
+function DistributePageContent() {
+  const searchParams = useSearchParams();
   const { isMounted, hasPrevWallet } = useIsMounted();
   const { address, status, account } = useAccount();
   const { isCartridgeConnected } = useCartridge();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
+  const [labels, setLabels] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [distributionType, setDistributionType] = useState<
     "equal" | "weighted"
@@ -90,6 +108,7 @@ export default function DistributePage() {
   const [lumpSum, setLumpSum] = useState<string>("");
   const [selectedToken, setSelectedToken] = useState<TokenOption | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
   const [pendingDistribution, setPendingDistribution] = useState<{
     totalAmount: string;
     recipientCount: number;
@@ -143,12 +162,11 @@ export default function DistributePage() {
           calldata: [],
         });
         
-        // Handle both array and object response formats
         const result = Array.isArray(response) ? response : (response as { result: string[] }).result;
         console.log("result", result);
         
         const resultValue = result[0];
-        const decimalValue = parseInt(resultValue, 16);
+        const decimalValue = Number.parseInt(resultValue, 16);
         setProtocolFeePercentage(decimalValue);
       } catch (error) {
         console.error("Error fetching protocol fee:", error);
@@ -162,7 +180,7 @@ export default function DistributePage() {
   const calculateTotalAmount = () => {
     return distributions
       .reduce((sum, dist) => {
-        return sum + parseFloat(dist.amount);
+        return sum + Number.parseFloat(dist.amount);
       }, 0)
       .toString();
   };
@@ -170,20 +188,36 @@ export default function DistributePage() {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
-      Papa.parse<CSVRow>(file, {
-        complete: (results) => {
-          const parsedDistributions = results.data
-            .filter((row) => row[0])
-            .map((row) => ({
-              address: row[0],
-              amount: row[1] || equalAmount,
-            }));
+      Papa.parse(file, {
+        complete: (results: { data: unknown[] }) => {
+          const parsedData = (results.data as string[][])
+            .filter(row => row[0]);
+          
+          const parsedDistributions = parsedData.map(row => ({
+            address: row[1],
+            amount: row[2] || equalAmount,
+          }));
           setDistributions(parsedDistributions);
+
+          // Reset labels first
+          setLabels({});
+          
+          if (showLabels) {
+            const newLabels: Record<number, string> = {};
+            parsedData.forEach((row, index) => {
+              // Check if there's a label in the CSV (first column)
+              if (row[0]) {
+                newLabels[index] = row[0].trim();
+              }
+            });
+            setLabels(newLabels);
+          }
         },
         header: false,
+        skipEmptyLines: true,
       });
     },
-    [equalAmount]
+    [equalAmount, showLabels]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -198,6 +232,8 @@ export default function DistributePage() {
     setDistributions([...distributions, { address: "", amount: "" }]);
   };
 
+  const [validationTimeout, setValidationTimeout] = useState<NodeJS.Timeout | null>(null);
+
   const updateDistribution = (
     index: number,
     field: keyof Distribution,
@@ -209,6 +245,33 @@ export default function DistributePage() {
       [field]: value,
     };
     setDistributions(newDistributions);
+
+    // Clear any existing timeout
+    if (validationTimeout) {
+      clearTimeout(validationTimeout);
+    }
+
+    // Only validate address and amount after typing stops
+    if (field === 'address' || field === 'amount') {
+      const newTimeout = setTimeout(() => {
+        const validation = validateDistribution(
+          newDistributions[index].address,
+          newDistributions[index].amount
+        );
+        if (!validation.isValid) {
+          // Optional: Show validation error
+          // toast.error(validation.error);
+        }
+      }, 500); // 500ms delay
+      setValidationTimeout(newTimeout);
+    }
+  };
+
+  const updateLabel = (index: number, value: string) => {
+    setLabels(prev => ({
+      ...prev,
+      [index]: value
+    }));
   };
 
   const removeRow = (index: number) => {
@@ -248,8 +311,8 @@ export default function DistributePage() {
           <div>
             Duplicate addresses found:
             <ul className="list-disc pl-4 mt-2">
-              {duplicateAddresses.map((addr, i) => (
-                <li key={i} className="text-sm">
+              {duplicateAddresses.map((addr) => (
+                <li key={addr} className="text-sm">
                   {addr}
                 </li>
               ))}
@@ -287,8 +350,8 @@ export default function DistributePage() {
           <div>
             Invalid distributions:
             <ul className="list-disc pl-4 mt-2">
-              {validationErrors.map((error, i) => (
-                <li key={i} className="text-sm">
+              {validationErrors.map((error) => (
+                <li key={error} className="text-sm">
                   {error}
                 </li>
               ))}
@@ -333,7 +396,7 @@ export default function DistributePage() {
         throw new Error("No token selected");
       }
 
-      toast.loading("Processing distributions...", { duration: Infinity });
+      toast.loading("Processing distributions...", { duration: Number.POSITIVE_INFINITY });
 
       const recipients = distributions.map((dist) => dist.address);
 
@@ -455,6 +518,11 @@ export default function DistributePage() {
           const protocolFee = (Number(baseAmount) * protocolFeePercentage) / 10000;
           const token = selectedToken;
           
+          const distributionsWithLabels = distributions.map((dist, index) => ({
+            ...dist,
+            label: labels[index]
+          }));
+
           await fetch('/api/distributions', {
             method: 'POST',
             headers: {
@@ -473,7 +541,11 @@ export default function DistributePage() {
               network: isMainnet ? "MAINNET" : "TESTNET",
               status: "COMPLETED",
               metadata: {
-                recipients: distributions.map(d => ({ address: d.address, amount: d.amount }))
+                recipients: distributionsWithLabels.map(d => ({
+                  address: d.address,
+                  amount: d.amount,
+                  ...(showLabels && d.label ? { label: d.label } : {})
+                }))
               }
             }),
           });
@@ -503,6 +575,53 @@ export default function DistributePage() {
       setIsLoading(false);
     }
   };
+
+  // Handle URL parameters for pre-populating the form
+  useEffect(() => {
+    if (!isMounted) return;
+
+    try {
+      // Get distribution type
+      const type = searchParams.get('type');
+      if (type === 'equal' || type === 'weighted') {
+        setDistributionType(type);
+      }
+
+      // Get token
+      const token = searchParams.get('token');
+      if (token && SUPPORTED_TOKENS[token]) {
+        setSelectedToken(SUPPORTED_TOKENS[token]);
+      }
+
+      // Get labels flag
+      const labels = searchParams.get('labels');
+      if (labels === 'true') {
+        setShowLabels(true);
+      }
+
+      // Get recipients data
+      const recipientsData = searchParams.get('recipients');
+      if (recipientsData) {
+        const recipients = JSON.parse(recipientsData) as RecipientData[];
+        setDistributions(recipients.map(r => ({
+          address: r.address,
+          amount: r.amount
+        })));
+
+        // Set labels if they exist
+        const newLabels: Record<number, string> = {};
+        recipients.forEach((r, index) => {
+          if (r.label) {
+            newLabels[index] = r.label;
+          }
+        });
+        setLabels(newLabels);
+      }
+    } catch (error) {
+      console.error('Error parsing URL parameters:', error);
+      toast.error('Failed to load distribution data from URL');
+    }
+  }, [isMounted, searchParams, SUPPORTED_TOKENS]);
 
   if (!isMounted) {
     return <DistributeSkeleton />;
@@ -580,14 +699,14 @@ export default function DistributePage() {
                   : "text-[#DADADA]"
               }`}
             >
-              <label htmlFor="distribution-type">Equal</label>
+              <label htmlFor="distribution-type-equal">Equal</label>
               {distributionType === "equal" && (
                 <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#440495] to-[#B102CD]" />
               )}
             </div>
 
             <Switch
-              id="distribution-type"
+              id="distribution-type-equal"
               checked={distributionType === "equal"}
               onCheckedChange={(checked) => {
                 setDistributionType(checked ? "equal" : "weighted");
@@ -601,11 +720,26 @@ export default function DistributePage() {
                   : "text-[#DADADA]"
               }`}
             >
-              <label>Weighted</label>
+              <label htmlFor="distribution-type-weighted">Weighted</label>
               {distributionType === "weighted" && (
                 <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#440495] to-[#B102CD]" />
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Label Toggle */}
+        <div className="mb-8 bg-[#0d0019] bg-opacity-50 p-6 rounded-lg border border-[#5b21b6] border-opacity-20">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold mb-2 text-white">Enable Labels</h2>
+              <p className="text-sm text-gray-400">Add custom labels/names for each address</p>
+            </div>
+            <Switch
+              id="show-labels"
+              checked={showLabels}
+              onCheckedChange={setShowLabels}
+            />
           </div>
         </div>
 
@@ -615,6 +749,7 @@ export default function DistributePage() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-white">Amount Distribution</h2>
               <select
+                id="amount-input-type"
                 value={amountInputType}
                 onChange={(e) => setAmountInputType(e.target.value as "perAddress" | "lumpSum")}
                 className="bg-[#1a1a1a] text-white border border-[#5b21b6] border-opacity-40 rounded-lg px-4 py-2 focus:outline-none focus:border-[#B102CD]"
@@ -627,9 +762,12 @@ export default function DistributePage() {
             <div className="space-y-4">
               {amountInputType === "lumpSum" ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Lump Sum to Distribute</label>
+                  <label htmlFor="lump-sum-input" className="block text-sm font-medium text-gray-300 mb-2">
+                    Lump Sum to Distribute
+                  </label>
                   <div className="flex gap-4">
                     <input
+                      id="lump-sum-input"
                       type="text"
                       placeholder="Enter total amount to distribute"
                       value={lumpSum}
@@ -637,12 +775,13 @@ export default function DistributePage() {
                       className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
                     />
                     <button
+                      type="button"
                       onClick={() => {
                         if (distributions.length === 0) {
                           toast.error("Add some addresses first");
                           return;
                         }
-                        if (!lumpSum || isNaN(Number(lumpSum))) {
+                        if (!lumpSum || Number.isNaN(Number(lumpSum))) {
                           toast.error("Please enter a valid lump sum amount");
                           return;
                         }
@@ -702,7 +841,11 @@ export default function DistributePage() {
               </p>
               <p className="text-sm text-gray-400 mt-2">
                 {distributionType === "equal"
-                  ? "CSV format: address (one per line)"
+                  ? showLabels
+                    ? "CSV format: address,label (one per line)"
+                    : "CSV format: address (one per line)"
+                  : showLabels
+                  ? "CSV format: address,amount,label (one per line)"
                   : "CSV format: address,amount (one per line)"}
               </p>
             </div>
@@ -714,6 +857,7 @@ export default function DistributePage() {
           <div className="flex justify-between mb-4">
             <h2 className="text-xl font-semibold">Manual Input</h2>
             <button
+              type="button"
               onClick={addNewRow}
               className="px-6 py-3 bg-gradient-to-r from-[#440495] to-[#B102CD] hover:from-[#B102CD] hover:to-[#440495] text-white font-bold rounded-full transition-all"
             >
@@ -724,8 +868,19 @@ export default function DistributePage() {
           {/* Distribution List */}
           <div className="space-y-4">
             {distributions.map((dist, index) => (
-              <div key={index} className="flex gap-4">
+              <div key={`dist-${dist.address}-${index}`} className="flex gap-4">
+                {showLabels && (
+                  <input
+                    id={`label-${index}`}
+                    type="text"
+                    placeholder="Label/Name"
+                    value={labels[index] || ""}
+                    onChange={(e) => updateLabel(index, e.target.value)}
+                    className="w-48 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
+                  />
+                )}
                 <input
+                  id={`address-${index}`}
                   type="text"
                   placeholder="Address"
                   value={dist.address}
@@ -735,6 +890,7 @@ export default function DistributePage() {
                   className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
                 />
                 <input
+                  id={`amount-${index}`}
                   type="text"
                   placeholder="Amount"
                   value={dist.amount}
@@ -744,6 +900,7 @@ export default function DistributePage() {
                   className="w-32 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
                 />
                 <button
+                  type="button"
                   onClick={() => removeRow(index)}
                   className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full transition-all"
                 >
@@ -755,30 +912,33 @@ export default function DistributePage() {
         </div>
 
         {/* Distribution Button */}
-        <button
-          onClick={handleDistribute}
-          disabled={isLoading || distributions.length === 0}
-          className={`w-full px-6 py-3 bg-gradient-to-r from-[#440495] to-[#B102CD] text-white font-bold rounded-full
-            ${
-              isLoading || distributions.length === 0
-                ? "opacity-50 cursor-not-allowed from-gray-500 to-gray-600"
-                : "hover:from-[#B102CD] hover:to-[#440495]"
-            }
-            transition-all`}
-        >
-          {isLoading ? "Processing..." : "Distribute Tokens"}
-        </button>
-      </div>
+        <div className="mb-8">
+          <button
+            type="button"
+            onClick={handleDistribute}
+            disabled={isLoading || distributions.length === 0}
+            className={`w-full px-6 py-3 bg-gradient-to-r from-[#440495] to-[#B102CD] text-white font-bold rounded-full
+              ${
+                isLoading || distributions.length === 0
+                  ? "opacity-50 cursor-not-allowed from-gray-500 to-gray-600"
+                  : "hover:from-[#B102CD] hover:to-[#440495]"
+              }
+              transition-all`}
+          >
+            {isLoading ? "Processing..." : "Distribute Tokens"}
+          </button>
+        </div>
 
-      <ConfirmationModal
-        isOpen={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
-        onConfirm={handleConfirmDistribution}
-        totalAmount={pendingDistribution?.totalAmount || "0"}
-        recipientCount={pendingDistribution?.recipientCount || 0}
-        selectedToken={selectedToken?.symbol || ""}
-        protocolFeePercentage={protocolFeePercentage}
-      />
+        <ConfirmationModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={handleConfirmDistribution}
+          totalAmount={pendingDistribution?.totalAmount || "0"}
+          recipientCount={pendingDistribution?.recipientCount || 0}
+          selectedToken={selectedToken?.symbol || ""}
+          protocolFeePercentage={protocolFeePercentage}
+        />
+      </div>
     </div>
   );
-} 
+}

@@ -15,6 +15,9 @@ export function DistributionDetailsModal({
 }: DistributionDetailsModalProps) {
   if (!distribution) return null;
 
+  const recipients = distribution.metadata?.recipients || [];
+  const hasLabels = recipients.some(r => r.label);
+
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
@@ -72,6 +75,38 @@ export function DistributionDetailsModal({
                 <p className="text-white font-medium break-all">
                   {distribution.transaction_hash}
                 </p>
+              </div>
+            )}
+
+            {recipients.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-sm text-[#DADADA] mb-2">Recipients</h3>
+                <div className="max-h-60 overflow-y-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-sm text-[#DADADA]">
+                        {hasLabels && <th className="p-2">Label</th>}
+                        <th className="p-2">Address</th>
+                        <th className="p-2">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recipients.map((recipient, index) => (
+                        <tr key={`${recipient.address}-${index}`} className="border-t border-[#5b21b6] border-opacity-20">
+                          {hasLabels && (
+                            <td className="p-2 text-sm">
+                              {recipient.label || '-'}
+                            </td>
+                          )}
+                          <td className="p-2 text-sm font-mono">{recipient.address}</td>
+                          <td className="p-2 text-sm">
+                            {recipient.amount} {distribution.token_symbol}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

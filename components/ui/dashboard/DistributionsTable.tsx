@@ -25,6 +25,7 @@ import { DistributionDetailsModal } from "./DistributionDetailsModal";
 import { jsPDF } from "jspdf";
 import autoTable, { UserOptions } from "jspdf-autotable";
 import { Distribution, RecipientData, DistributionResponse } from "@/lib/types/distribution";
+import { useRouter } from "next/navigation";
 
 declare module "jspdf" {
   interface jsPDF {
@@ -50,6 +51,7 @@ export function DistributionsTable() {
   
   // Get the connected wallet address
   const { address } = useAccount();
+  const router = useRouter();
 
   // Fetch distributions when wallet address changes
   useEffect(() => {
@@ -118,6 +120,7 @@ export function DistributionsTable() {
     }
     
     const recipients: RecipientData[] = distribution.metadata.recipients || [];
+    const hasLabels = recipients.some(r => r.label);
     
     // Create CSV content
     const csvContent = [
@@ -133,8 +136,12 @@ export function DistributionsTable() {
       ['Transaction Hash', distribution.transaction_hash || 'N/A'],
       [],
       ['Recipients'],
-      ['Address', 'Amount'],
-      ...recipients.map(recipient => [recipient.address, recipient.amount])
+      hasLabels ? ['Address', 'Amount', 'Label'] : ['Address', 'Amount'],
+      ...recipients.map(recipient => 
+        hasLabels ? 
+          [recipient.address, recipient.amount, recipient.label || ''] :
+          [recipient.address, recipient.amount]
+      )
     ]
       .map(row => row.join(','))
       .join('\n');
@@ -154,6 +161,7 @@ export function DistributionsTable() {
 
   const handleExportPDF = async (distribution: Distribution) => {
     const recipients: RecipientData[] = distribution.metadata?.recipients || [];
+    const hasLabels = recipients.some(r => r.label);
     
     const doc = new jsPDF();
     
@@ -202,11 +210,19 @@ export function DistributionsTable() {
     
     autoTable(doc, {
       startY: finalY + 20,
-      head: [['Address', 'Amount']],
-      body: recipients.map(recipient => [
-        recipient.address,
-        `${recipient.amount} ${distribution.token_symbol}`
-      ]),
+      head: [hasLabels ? ['Address', 'Amount', 'Label'] : ['Address', 'Amount']],
+      body: recipients.map(recipient => 
+        hasLabels ? 
+          [
+            recipient.address,
+            `${recipient.amount} ${distribution.token_symbol}`,
+            recipient.label || '-'
+          ] :
+          [
+            recipient.address,
+            `${recipient.amount} ${distribution.token_symbol}`
+          ]
+      ),
       theme: 'grid',
       headStyles: { 
         fillColor: [91, 33, 182],
@@ -225,6 +241,35 @@ export function DistributionsTable() {
     });
     
     doc.save(`distribution_${distribution.id}.pdf`);
+  };
+
+  const handleResendPayment = (distribution: Distribution) => {
+    if (!distribution.metadata) return;
+    
+    const searchParams = new URLSearchParams();
+    
+    // Add distribution type
+    searchParams.set('type', distribution.distribution_type.toLowerCase());
+    
+    // Add token symbol
+    searchParams.set('token', distribution.token_symbol);
+    
+    // Add show labels if there are any labels
+    const hasLabels = distribution.metadata.recipients.some(r => r.label);
+    if (hasLabels) {
+      searchParams.set('labels', 'true');
+    }
+    
+    // Add recipients data
+    const recipientsData = distribution.metadata.recipients.map(r => ({
+      address: r.address,
+      amount: r.amount,
+      ...(r.label ? { label: r.label } : {})
+    }));
+    searchParams.set('recipients', JSON.stringify(recipientsData));
+    
+    // Navigate to distribute page with parameters
+    router.push(`/distribute?${searchParams.toString()}`);
   };
 
   return (
@@ -384,6 +429,12 @@ export function DistributionsTable() {
                           }}
                         >
                           View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="hover:bg-[#5b21b6] cursor-pointer"
+                          onClick={() => handleResendPayment(distribution)}
+                        >
+                          Resend Payment
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           className="hover:bg-[#5b21b6] cursor-pointer"

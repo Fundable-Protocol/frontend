@@ -1,6 +1,7 @@
 export interface RecipientData {
     address: string;
     amount: string;
+    label?: string;
   }
   
   export interface Distribution {
