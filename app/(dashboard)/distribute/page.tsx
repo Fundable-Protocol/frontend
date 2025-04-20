@@ -194,8 +194,8 @@ function DistributePageContent() {
             .filter(row => row[0]);
           
           const parsedDistributions = parsedData.map(row => ({
-            address: row[1],
-            amount: row[2] || equalAmount,
+            address: row[0],
+            amount: row[1] || equalAmount,
           }));
           setDistributions(parsedDistributions);
 
@@ -206,8 +206,8 @@ function DistributePageContent() {
             const newLabels: Record<number, string> = {};
             parsedData.forEach((row, index) => {
               // Check if there's a label in the CSV (first column)
-              if (row[0]) {
-                newLabels[index] = row[0].trim();
+              if (row[2]) {
+                newLabels[index] = row[2].trim();
               }
             });
             setLabels(newLabels);
