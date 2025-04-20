@@ -562,6 +562,7 @@ function DistributePageContent() {
         setDistributions([]); // Clear the form on success
       } else {
         toast.error("Distribution failed");
+        toast.dismiss();
       }
     } catch (error) {
       console.error("Distribution process failed:", error);
@@ -855,7 +856,7 @@ function DistributePageContent() {
         {/* Manual Input Section */}
         <div className="mb-8">
           <div className="flex justify-between mb-4">
-            <h2 className="text-xl font-semibold">Manual Input</h2>
+            <h2 className="text-xl font-semibold text-white">Manual Input</h2>
             <button
               type="button"
               onClick={addNewRow}
