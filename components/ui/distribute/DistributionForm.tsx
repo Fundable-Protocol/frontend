@@ -12,7 +12,7 @@ interface DistributionFormProps {
   equalAmount: string;
   distributionType: "equal" | "weighted";
   resolvedAddresses: Record<number, string>;
-  setResolvedAddresses: (addresses: Record<number, string>) => void;
+  setResolvedAddresses: (addresses: Record<number, string> | ((prev: Record<number, string>) => Record<number, string>)) => void;
 }
 
 export const DistributionForm = ({
@@ -51,12 +51,16 @@ export const DistributionForm = ({
       const file = acceptedFiles[0];
       Papa.parse(file, {
         complete: (results: { data: unknown[] }) => {
-          const parsedData = (results.data as string[][])
-            .filter(row => row[0]);
+          const parsedData = (results.data as unknown[])
+            .filter(row => Array.isArray(row) && row[0] && typeof row[0] === 'string')
+            .map(row => row as string[]);
           
           const parsedDistributions = parsedData.map(row => ({
-            address: row[0],
-            amount: row[1] || equalAmount,
+            address: row[0].trim(),
+            amount:
+              distributionType === "equal"
+                ? equalAmount
+                : (row[1] ?? "").trim(),
           }));
           
           setDistributions(parsedDistributions);
@@ -79,7 +83,7 @@ export const DistributionForm = ({
         skipEmptyLines: true,
       });
     },
-    [equalAmount, showLabels, setDistributions, setLabels, processCSVStarkNames]
+    [equalAmount, showLabels, setDistributions, setLabels, processCSVStarkNames, distributionType]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -106,8 +110,16 @@ export const DistributionForm = ({
     };
     setDistributions(newDistributions);
 
-    if (field === "address" && value.endsWith(".stark")) {
-      queueStarkNameResolution(index, value);
+    if (field === "address") {
+      if (value.endsWith(".stark")) {
+        queueStarkNameResolution(index, value);
+      } else {
+        setResolvedAddresses((prev: Record<number, string>) => {
+          const newMap = { ...prev };
+          delete newMap[index];
+          return newMap;
+        });
+      }
     }
   };
 
