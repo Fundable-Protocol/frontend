@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1745487366948,
+      "tag": "0000_tearful_mephistopheles",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1745494328183,
+      "tag": "0001_rename-user-timestamps",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1745494992271,
+      "tag": "0002_rename-useraccess-session-timestamps",
+      "breakpoints": true
+    }
+  ]
+}
