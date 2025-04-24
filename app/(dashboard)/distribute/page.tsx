@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useAccount, useNetwork } from "@starknet-react/core";
-import { useDropzone } from "react-dropzone";
-import Papa from "papaparse";
-import { cairo, Call } from "starknet";
+import { cairo } from "starknet";
+import type { Call } from "starknet";
 import { validateDistribution } from "@/utils/validation";
 import { toast } from "react-hot-toast";
 import { parseUnits } from "ethers";
@@ -16,6 +15,9 @@ import DistributeSkeleton from "@/components/ui/distribute/DistributeSkeleton";
 import CartridgeWalletInfo from "@/components/ui/distribute/CartridgeWalletInfo";
 import { useCartridge } from "@/lib/hooks/useCartridge";
 import { useSearchParams } from "next/navigation";
+import { DistributionForm } from "@/components/ui/distribute/DistributionForm";
+import { getContractAddress, getSupportedTokens } from "@/lib/constants/tokens";
+import type { TokenOption } from "@/lib/constants/tokens";
 
 interface Distribution {
   address: string;
@@ -25,65 +27,6 @@ interface Distribution {
 interface RecipientData extends Distribution {
   label?: string;
 }
-
-interface TokenOption {
-  symbol: string;
-  address: string;
-  decimals: number;
-}
-
-// Define contract addresses for different networks
-const TESTNET_CONTRACT_ADDRESS = "0x02495b0832001cde19e2bd3ec27beabe07b913000e155864a77b5e834ce60b6a";
-const MAINNET_CONTRACT_ADDRESS = "0x67a27274b63fa3b070cabf7adf59e7b1c1e5b768b18f84b50f6cb85f59c42e5";
-
-// Define supported tokens for different networks
-const MAINNET_SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
-  USDC: {
-    symbol: "USDC",
-    address:
-      "0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8",
-    decimals: 6,
-  },
-  ETH: {
-    symbol: "ETH",
-    address:
-      "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
-    decimals: 18,
-  },
-  STRK: {
-    symbol: "STRK",
-    address:
-      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-    decimals: 18,
-  },
-  USDT: {
-    symbol: "USDT",
-    address:
-      "0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8",
-    decimals: 6,
-  },
-};
-
-const TESTNET_SUPPORTED_TOKENS: { [key: string]: TokenOption } = {
-  USDC: {
-    symbol: "USDC",
-    address:
-      "0x05be0e73ef0f477eb8d4fbea87802acbf55c266c2bab64aa93b2db573be15c41",
-    decimals: 6,
-  },
-  ETH: {
-    symbol: "ETH",
-    address:
-      "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
-    decimals: 18,
-  },
-  STRK: {
-    symbol: "STRK",
-    address:
-      "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
-    decimals: 18,
-  },
-};
 
 export default function DistributePage() {
   return (
@@ -100,10 +43,9 @@ function DistributePageContent() {
   const { isCartridgeConnected } = useCartridge();
   const [distributions, setDistributions] = useState<Distribution[]>([]);
   const [labels, setLabels] = useState<Record<number, string>>({});
+  const [resolvedAddresses, setResolvedAddresses] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [distributionType, setDistributionType] = useState<
-    "equal" | "weighted"
-  >("equal");
+  const [distributionType, setDistributionType] = useState<"equal" | "weighted">("equal");
   const [equalAmount, setEqualAmount] = useState<string>("");
   const [lumpSum, setLumpSum] = useState<string>("");
   const [selectedToken, setSelectedToken] = useState<TokenOption | null>(null);
@@ -113,7 +55,6 @@ function DistributePageContent() {
     totalAmount: string;
     recipientCount: number;
   } | null>(null);
-
   const [protocolFeePercentage, setProtocolFeePercentage] = useState<number>(0);
   const [isMainnet, setIsMainnet] = useState<boolean>(true);
   const { chain } = useNetwork();
@@ -122,8 +63,8 @@ function DistributePageContent() {
   const [amountInputType, setAmountInputType] = useState<"perAddress" | "lumpSum">("perAddress");
 
   // Derive current contract address and supported tokens based on network
-  const CONTRACT_ADDRESS = isMainnet ? MAINNET_CONTRACT_ADDRESS : TESTNET_CONTRACT_ADDRESS;
-  const SUPPORTED_TOKENS = isMainnet ? MAINNET_SUPPORTED_TOKENS : TESTNET_SUPPORTED_TOKENS;
+  const CONTRACT_ADDRESS = getContractAddress(isMainnet);
+  const SUPPORTED_TOKENS = getSupportedTokens(isMainnet);
 
   // Initialize selected token after we know which network we're on
   useEffect(() => {
@@ -163,8 +104,6 @@ function DistributePageContent() {
         });
         
         const result = Array.isArray(response) ? response : (response as { result: string[] }).result;
-        console.log("result", result);
-        
         const resultValue = result[0];
         const decimalValue = Number.parseInt(resultValue, 16);
         setProtocolFeePercentage(decimalValue);
@@ -183,99 +122,6 @@ function DistributePageContent() {
         return sum + Number.parseFloat(dist.amount);
       }, 0)
       .toString();
-  };
-
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0];
-      Papa.parse(file, {
-        complete: (results: { data: unknown[] }) => {
-          const parsedData = (results.data as string[][])
-            .filter(row => row[0]);
-          
-          const parsedDistributions = parsedData.map(row => ({
-            address: row[0],
-            amount: row[1] || equalAmount,
-          }));
-          setDistributions(parsedDistributions);
-
-          // Reset labels first
-          setLabels({});
-          
-          if (showLabels) {
-            const newLabels: Record<number, string> = {};
-            parsedData.forEach((row, index) => {
-              // Check if there's a label in the CSV (first column)
-              if (row[2]) {
-                newLabels[index] = row[2].trim();
-              }
-            });
-            setLabels(newLabels);
-          }
-        },
-        header: false,
-        skipEmptyLines: true,
-      });
-    },
-    [equalAmount, showLabels]
-  );
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "text/csv": [".csv"],
-    },
-    maxFiles: 1,
-  });
-
-  const addNewRow = () => {
-    setDistributions([...distributions, { address: "", amount: "" }]);
-  };
-
-  const [validationTimeout, setValidationTimeout] = useState<NodeJS.Timeout | null>(null);
-
-  const updateDistribution = (
-    index: number,
-    field: keyof Distribution,
-    value: string
-  ) => {
-    const newDistributions = [...distributions];
-    newDistributions[index] = {
-      ...newDistributions[index],
-      [field]: value,
-    };
-    setDistributions(newDistributions);
-
-    // Clear any existing timeout
-    if (validationTimeout) {
-      clearTimeout(validationTimeout);
-    }
-
-    // Only validate address and amount after typing stops
-    if (field === 'address' || field === 'amount') {
-      const newTimeout = setTimeout(() => {
-        const validation = validateDistribution(
-          newDistributions[index].address,
-          newDistributions[index].amount
-        );
-        if (!validation.isValid) {
-          // Optional: Show validation error
-          // toast.error(validation.error);
-        }
-      }, 500); // 500ms delay
-      setValidationTimeout(newTimeout);
-    }
-  };
-
-  const updateLabel = (index: number, value: string) => {
-    setLabels(prev => ({
-      ...prev,
-      [index]: value
-    }));
-  };
-
-  const removeRow = (index: number) => {
-    setDistributions(distributions.filter((_, i) => i !== index));
   };
 
   const handleDistribute = async (): Promise<void> => {
@@ -339,7 +185,9 @@ function DistributePageContent() {
       // Check if there are any distributions
       const validationErrors: string[] = [];
       distributions.forEach((dist, index) => {
-        const validation = validateDistribution(dist.address, dist.amount);
+        // Use resolved address for validation if available
+        const addressToValidate = dist.address.endsWith('.stark') ? resolvedAddresses[index] || dist.address : dist.address;
+        const validation = validateDistribution(addressToValidate, dist.amount);
         if (!validation.isValid && validation.error) {
           validationErrors.push(`Row ${index + 1}: ${validation.error}`);
         }
@@ -398,9 +246,12 @@ function DistributePageContent() {
 
       toast.loading("Processing distributions...", { duration: Number.POSITIVE_INFINITY });
 
-      const recipients = distributions.map((dist) => dist.address);
+      // Use resolved addresses for the contract call
+      const recipients = distributions.map((dist) => 
+        dist.address.endsWith('.stark') ? resolvedAddresses[distributions.indexOf(dist)] || dist.address : dist.address
+      );
 
-      let tx;
+      let tx: string;
       if (!account) {
         throw new Error("Account not found");
       }
@@ -419,10 +270,6 @@ function DistributePageContent() {
         const protocolFee =
           (totalAmount * BigInt(protocolFeePercentage)) / BigInt(10000);
         const totalAmountWithFee = totalAmount + protocolFee;
-
-        console.log("Base Amount:", totalAmount.toString());
-        console.log("Protocol Fee:", protocolFee.toString());
-        console.log("Total Amount with Fee:", totalAmountWithFee.toString());
 
         const low =
           totalAmountWithFee & BigInt("0xffffffffffffffffffffffffffffffff");
@@ -474,10 +321,6 @@ function DistributePageContent() {
         const protocolFee =
           (totalAmount * BigInt(protocolFeePercentage)) / BigInt(10000);
         const totalAmountWithFee = totalAmount + protocolFee;
-
-        console.log("Base Amount:", totalAmount.toString());
-        console.log("Protocol Fee:", protocolFee.toString());
-        console.log("Total Amount with Fee:", totalAmountWithFee.toString());
 
         const low =
           totalAmountWithFee & BigInt("0xffffffffffffffffffffffffffffffff");
@@ -561,8 +404,8 @@ function DistributePageContent() {
         );
         setDistributions([]); // Clear the form on success
       } else {
-        toast.error("Distribution failed");
         toast.dismiss();
+        toast.error("Distribution failed");
       }
     } catch (error) {
       console.error("Distribution process failed:", error);
@@ -656,7 +499,7 @@ function DistributePageContent() {
           }`}>
             <div className={`w-3 h-3 rounded-full animate-pulse ${
               isMainnet ? 'bg-green-400' : 'bg-yellow-300'
-            }`}></div>
+            }`} />
             <span className="font-semibold text-white">
               {isMainnet ? 'Mainnet' : 'Testnet'}
             </span>
@@ -804,9 +647,10 @@ function DistributePageContent() {
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Amount per Address</label>
+                  <label htmlFor="equal-amount-input" className="block text-sm font-medium text-gray-300 mb-2">Amount per Address</label>
                   <input
-                    type="text"
+                    id="equal-amount-input"
+                    type="number"
                     placeholder="Amount to distribute per address"
                     value={equalAmount}
                     onChange={(e) => {
@@ -826,91 +670,17 @@ function DistributePageContent() {
           </div>
         )}
 
-        {/* CSV Upload Section */}
-        <div
-          {...getRootProps()}
-          className={`border-2 border-starknet-cyan rounded-lg p-8 mb-8 text-center cursor-pointer
-            ${isDragActive ? "bg-starknet-purple bg-opacity-20" : ""}`}
-        >
-          <input {...getInputProps()} />
-          {isDragActive ? (
-            <p>Drop the CSV file here...</p>
-          ) : (
-            <div>
-              <p className="text-white">
-                Drag and drop a CSV file here, or click to select a file
-              </p>
-              <p className="text-sm text-gray-400 mt-2">
-                {distributionType === "equal"
-                  ? showLabels
-                    ? "CSV format: address,label (one per line)"
-                    : "CSV format: address (one per line)"
-                  : showLabels
-                  ? "CSV format: address,amount,label (one per line)"
-                  : "CSV format: address,amount (one per line)"}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Manual Input Section */}
-        <div className="mb-8">
-          <div className="flex justify-between mb-4">
-            <h2 className="text-xl font-semibold text-white">Manual Input</h2>
-            <button
-              type="button"
-              onClick={addNewRow}
-              className="px-6 py-3 bg-gradient-to-r from-[#440495] to-[#B102CD] hover:from-[#B102CD] hover:to-[#440495] text-white font-bold rounded-full transition-all"
-            >
-              Add Row
-            </button>
-          </div>
-
-          {/* Distribution List */}
-          <div className="space-y-4">
-            {distributions.map((dist, index) => (
-              <div key={`dist-${dist.address}-${index}`} className="flex gap-4">
-                {showLabels && (
-                  <input
-                    id={`label-${index}`}
-                    type="text"
-                    placeholder="Label/Name"
-                    value={labels[index] || ""}
-                    onChange={(e) => updateLabel(index, e.target.value)}
-                    className="w-48 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
-                  />
-                )}
-                <input
-                  id={`address-${index}`}
-                  type="text"
-                  placeholder="Address"
-                  value={dist.address}
-                  onChange={(e) =>
-                    updateDistribution(index, "address", e.target.value)
-                  }
-                  className="flex-1 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
-                />
-                <input
-                  id={`amount-${index}`}
-                  type="text"
-                  placeholder="Amount"
-                  value={dist.amount}
-                  onChange={(e) =>
-                    updateDistribution(index, "amount", e.target.value)
-                  }
-                  className="w-32 bg-starknet-purple bg-opacity-50 rounded-lg px-4 py-2 text-black placeholder-gray-400"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeRow(index)}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full transition-all"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+        <DistributionForm
+          distributions={distributions}
+          setDistributions={setDistributions}
+          labels={labels}
+          setLabels={setLabels}
+          showLabels={showLabels}
+          equalAmount={equalAmount}
+          distributionType={distributionType}
+          resolvedAddresses={resolvedAddresses}
+          setResolvedAddresses={setResolvedAddresses}
+        />
 
         {/* Distribution Button */}
         <div className="mb-8">
