@@ -177,19 +177,25 @@ export class DistributionService {
 
     // return { distributions, total };
 
-    const whereClause = status
-      ? eq(distributionModel.status, status)
-      : undefined;
+    const baseQuery = db.select().from(distributionModel);
+
+    const listQuery = status
+      ? baseQuery.where(eq(distributionModel.status, status))
+      : baseQuery;
+
+    const countQuery = status
+      ? db
+          .select({ cnt: count() })
+          .from(distributionModel)
+          .where(eq(distributionModel.status, status))
+      : db.select({ cnt: count() }).from(distributionModel);
 
     const [distributions, total] = await Promise.all([
-      db
-        .select()
-        .from(distributionModel)
-        .where(whereClause)
+      listQuery
         .orderBy(desc(distributionModel.created_at))
         .limit(limit)
         .offset(skip),
-      db.select({ cnt: count() }).from(distributionModel).where(whereClause),
+      countQuery,
     ]);
 
     return {
