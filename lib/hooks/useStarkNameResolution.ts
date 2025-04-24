@@ -15,7 +15,7 @@ export const useStarkNameResolution = ({ distributions, setDistributions }: UseS
   });
 
   useEffect(() => {
-    if (resolvedAddress) {
+    if (resolvedAddress && Object.keys(starkNamesToResolve).length > 0) {
       const index = Number.parseInt(Object.keys(starkNamesToResolve)[0]);
       const updatedDistributions = [...distributions];
       updatedDistributions[index] = {

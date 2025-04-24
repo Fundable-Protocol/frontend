@@ -247,8 +247,10 @@ function DistributePageContent() {
       toast.loading("Processing distributions...", { duration: Number.POSITIVE_INFINITY });
 
       // Use resolved addresses for the contract call
-      const recipients = distributions.map((dist) => 
-        dist.address.endsWith('.stark') ? resolvedAddresses[distributions.indexOf(dist)] || dist.address : dist.address
+      const recipients = distributions.map((dist, idx) =>
+        dist.address.endsWith('.stark')
+          ? resolvedAddresses[idx] || dist.address
+          : dist.address
       );
 
       let tx: string;
