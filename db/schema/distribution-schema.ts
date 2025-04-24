@@ -49,7 +49,7 @@ export const distributionModel = pgTable(
       mode: "date",
     }),
     network: network().default("MAINNET").notNull(),
-    created_at: timestamp("created_at", { precision: 3, mode: "string" })
+    created_at: timestamp("created_at", { precision: 3, mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
     metadata: jsonb(),
