@@ -46,7 +46,7 @@ export const distributionModel = pgTable(
     block_number: bigint("block_number", { mode: "number" }),
     block_timestamp: timestamp("block_timestamp", {
       precision: 3,
-      mode: "string",
+      mode: "date",
     }),
     network: network().default("MAINNET").notNull(),
     created_at: timestamp("created_at", { precision: 3, mode: "string" })

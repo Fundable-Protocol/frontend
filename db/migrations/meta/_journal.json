@@ -22,6 +22,13 @@
       "when": 1745494992271,
       "tag": "0002_rename-useraccess-session-timestamps",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1745513832887,
+      "tag": "0003_date-reset",
+      "breakpoints": true
     }
   ]
 }

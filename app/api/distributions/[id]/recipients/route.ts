@@ -6,7 +6,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const recipients = await DistributionService.getDistributionRecipients(params.id);
+    const recipients = await DistributionService.getDistributionRecipients(
+      params.id
+    );
     return NextResponse.json({ recipients });
   } catch (error) {
     console.error("Error fetching distribution recipients:", error);
@@ -15,4 +17,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

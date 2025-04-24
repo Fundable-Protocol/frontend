@@ -17,10 +17,12 @@ export const userModel = pgTable(
     email: text().notNull(),
 
     // renamed fields ↓
-    created_at: timestamp({ precision: 3, mode: "string" })
+    created_at: timestamp({ precision: 3, mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updated_at: timestamp({ precision: 3, mode: "string" }).notNull(),
+    updated_at: timestamp({ precision: 3, mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
   },
   (table) => [
     uniqueIndex("User_email_key").using(
@@ -36,10 +38,12 @@ export const userAccessModel = pgTable(
     id: text().$default(generateUUID).primaryKey(),
     user_id: text().notNull(),
     password: text().notNull(),
-    created_at: timestamp({ precision: 3, mode: "string" })
+    created_at: timestamp({ precision: 3, mode: "date" })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
-    updated_at: timestamp({ precision: 3, mode: "string" }).notNull(),
+    updated_at: timestamp({ precision: 3, mode: "date" })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
   },
   (table) => [
     uniqueIndex("UserAccess_userId_key").using(

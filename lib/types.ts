@@ -3,6 +3,12 @@ export interface RecipientData {
   amount: string;
 }
 
+export const DistributionStatus = ["COMPLETED", "FAILED", "PENDING"] as const;
+
+export const DistributionType = ["EQUAL", "WEIGHTED"] as const;
+
+export const SupportedNetwork = ["MAINNET", "TESTNET"] as const;
+
 export interface Distribution {
   id: string;
   user_address: string;
@@ -13,18 +19,18 @@ export interface Distribution {
   total_amount: string;
   fee_amount: string;
   total_recipients: number;
-  distribution_type: 'EQUAL' | 'WEIGHTED';
-  status: 'COMPLETED' | 'FAILED' | 'PENDING';
-  block_number?: bigint | null;
+  distribution_type: (typeof DistributionType)[number];
+  status: (typeof DistributionStatus)[number];
+  block_number?: bigint | number | null;
   block_timestamp?: Date | null;
-  network: 'MAINNET' | 'TESTNET';
-  created_at: Date;
+  network: (typeof SupportedNetwork)[number];
+  created_at: Date | string;
   metadata?: {
     recipients: Array<RecipientData>;
   } | null;
-} 
+}
 
 export interface DistributionResponse {
-    distributions: Distribution[];
-    total: number;
+  distributions: Distribution[];
+  total: number;
 }
