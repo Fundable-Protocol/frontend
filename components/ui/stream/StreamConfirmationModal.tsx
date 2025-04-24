@@ -1,4 +1,4 @@
-import { Stream } from "@/types/stream";
+import { Stream } from "@/lib/types/stream";
 
 interface StreamConfirmationModalProps {
   isOpen: boolean;

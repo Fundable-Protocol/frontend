@@ -252,55 +252,31 @@ export class DistributionService {
     };
   }
 
-  static async getDistributionRecipients(distributionId: string) {
-    try {
-      // const distribution = await prismaClient.distribution.findUnique({
-      //   where: { id: distributionId },
-      //   include: {
-      //     recipients: {
-      //       select: {
-      //         address: true,
-      //         amount: true,
-      //       },
-      //     },
-      //   },
-      // });
+  // static async getDistributionRecipients(distributionId: string) {
+  //   try {
+  //     const distribution = await prismaClient.distribution.findUnique({
+  //       where: { id: distributionId },
+  //       select: {
+  //         recipients: {
+  //           select: {
+  //             address: true,
+  //             amount: true
+  //           }
+  //         }
+  //       }
+  //     });
 
-      // if (!distribution) {
-      //   throw new Error("Distribution not found");
-      // }
+  //     if (!distribution) {
+  //       throw new Error('Distribution not found');
+  //     }
 
-      // return distribution.recipients.map((recipient) => ({
-      //   address: recipient.address,
-      //   amount: recipient.amount.toString(),
-      // }));
-
-      // Fetch all recipient rows for this distribution
-
-      const [distribution] = await db
-        .select({ metadata: distributionModel.metadata })
-        .from(distributionModel)
-        .where(eq(distributionModel.id, distributionId))
-        .limit(1);
-
-      if (!distribution) {
-        throw new Error("Distribution not found");
-      }
-
-      const metadata = distribution.metadata as {
-        recipients?: { address: string; amount: string }[];
-      };
-
-      const rows = metadata.recipients || [];
-
-      // Map and stringify amounts if needed
-      return rows.map((r) => ({
-        address: r.address,
-        amount: String(r.amount),
-      }));
-    } catch (error) {
-      console.error("Error fetching distribution recipients:", error);
-      throw error;
-    }
-  }
+  //     return distribution.recipients.map((recipient: RecipientData) => ({
+  //       address: recipient.address,
+  //       amount: recipient.amount.toString()
+  //     }));
+  //   } catch (error) {
+  //     console.error('Error fetching distribution recipients:', error);
+  //     throw error;
+  //   }
+  // }
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SUPPORTED_TOKENS } from "@/lib/constants";
-import { Stream } from "@/types/stream";
+import { Stream } from "@/lib/types/stream";
 
 interface CreateStreamFormProps {
   onSubmit: (data: Partial<Stream>) => void;
