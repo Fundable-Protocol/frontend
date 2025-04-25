@@ -235,7 +235,9 @@ export class DistributionService {
       : undefined;
 
     const [total, completed, failed, pending] = await Promise.all([
-      db.select({ cnt: count() }).from(distributionModel).where(baseWhere),
+      baseWhere
+        ? db.select({ cnt: count() }).from(distributionModel).where(baseWhere)
+        : db.select({ cnt: count() }).from(distributionModel),
       db
         .select({ cnt: count() })
         .from(distributionModel)
