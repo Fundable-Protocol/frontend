@@ -7,7 +7,7 @@ import { distributionModel } from "@/db/schema";
 //   DistributionType,
 //   Network,
 // } from "@prisma/client";
-import { count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { Distribution } from "../types";
 
 export interface CreateDistributionInput {
@@ -239,15 +239,27 @@ export class DistributionService {
       db
         .select({ cnt: count() })
         .from(distributionModel)
-        .where(baseWhere && eq(distributionModel.status, "COMPLETED")),
+        .where(
+          baseWhere
+            ? and(baseWhere, eq(distributionModel.status, "COMPLETED"))
+            : eq(distributionModel.status, "COMPLETED")
+        ),
       db
         .select({ cnt: count() })
         .from(distributionModel)
-        .where(baseWhere && eq(distributionModel.status, "FAILED")),
+        .where(
+          baseWhere
+            ? and(baseWhere, eq(distributionModel.status, "FAILED"))
+            : eq(distributionModel.status, "FAILED")
+        ),
       db
         .select({ cnt: count() })
         .from(distributionModel)
-        .where(baseWhere && eq(distributionModel.status, "PENDING")),
+        .where(
+          baseWhere
+            ? and(baseWhere, eq(distributionModel.status, "PENDING"))
+            : eq(distributionModel.status, "PENDING")
+        ),
     ]);
 
     return {
