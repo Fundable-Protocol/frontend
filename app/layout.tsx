@@ -55,7 +55,7 @@ export default function RootLayout({
             {children}
           </div>
           <SpeedInsights />
-          <Toaster position="bottom-right" />
+          <Toaster position="top-right" />
         </body>
       </StarknetProvider>
     </html>
