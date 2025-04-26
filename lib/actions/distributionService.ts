@@ -271,32 +271,4 @@ export class DistributionService {
       pending: Number(pending[0]?.cnt ?? 0),
     };
   }
-
-  // static async getDistributionRecipients(distributionId: string) {
-  //   try {
-  //     const distribution = await prismaClient.distribution.findUnique({
-  //       where: { id: distributionId },
-  //       select: {
-  //         recipients: {
-  //           select: {
-  //             address: true,
-  //             amount: true
-  //           }
-  //         }
-  //       }
-  //     });
-
-  //     if (!distribution) {
-  //       throw new Error('Distribution not found');
-  //     }
-
-  //     return distribution.recipients.map((recipient: RecipientData) => ({
-  //       address: recipient.address,
-  //       amount: recipient.amount.toString()
-  //     }));
-  //   } catch (error) {
-  //     console.error('Error fetching distribution recipients:', error);
-  //     throw error;
-  //   }
-  // }
 }

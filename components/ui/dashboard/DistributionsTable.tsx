@@ -82,8 +82,15 @@ export function DistributionsTable() {
         }
 
         const data: DistributionResponse = await response.json();
-        setDistributions(data.distributions);
-        console.log("Distributions:", data.distributions);
+        
+        // Format the amounts before setting them in state
+        const formattedDistributions = data.distributions.map(dist => ({
+          ...dist,
+          total_amount: parseFloat(dist.total_amount).toFixed(2),
+          fee_amount: parseFloat(dist.fee_amount).toFixed(2)
+        }));
+        
+        setDistributions(formattedDistributions);
         setError(null);
       } catch (err) {
         console.error("Error fetching distributions:", err);
